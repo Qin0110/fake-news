@@ -17,7 +17,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # preprocessor.dump_variable(test_size=0.2)
 # preprocessor.dump_variable(test_size=0.3)
 
-X_train, X_validate, X_test, y_train, y_validate, y_test = joblib.load('0.2_split_data.joblib')
+X_train, X_validate, X_test, y_train, y_validate, y_test = joblib.load('0.3_split_data.joblib')
 
 real = np.sum(y_train == 0)
 fake = np.sum(y_train == 1)
@@ -115,8 +115,8 @@ tuner = kt.Hyperband(
     directory='my_tuning_dir', # Folder where results are saved
     project_name='fake_news_cnn',
 
-    #region FOR NEW TUNING uncomment this, (commented reason: time consuming)
-    # overwrite=True 
+    #region For new tune and train, uncomment this(commented reason: time consuming)
+    overwrite=True 
 )
 
 # EarlyStopping to save time during the search
