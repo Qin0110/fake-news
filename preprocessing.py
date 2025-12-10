@@ -6,10 +6,16 @@ import joblib
 
 import nltk
 import contractions
+# Add the ftfy import here
+import ftfy
+# Add langdetect imports
+from langdetect import detect, LangDetectException, DetectorFactory
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.corpus import wordnet
+
+DetectorFactory.seed = 42
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -22,8 +28,19 @@ class Preprocessing:
         self.df = pd.read_csv("fake_news.csv")
         self.df.dropna(inplace=True)
         self.df.drop(['author', 'id'], axis=1, inplace=True)
+        
+        initial_rows = len(self.df)
+        print(f"Total rows before language filtering: {initial_rows}")
+        
+        self.df = self.df[self.df['text'].apply(self.is_english)]
+        
+        final_rows = len(self.df)
+        print(f"Total rows after language filtering: {final_rows}")
+        print(f"Removed {initial_rows - final_rows} non-English rows.")
+
         self.stemmer = PorterStemmer()
         self.lemmatizer = WordNetLemmatizer()
+        
         negation_list = {
             'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing',
             "don't", "aren't", "isn't", "wasn't", "weren't",
@@ -31,9 +48,12 @@ class Preprocessing:
             "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mustn't"
         }
         self.stop_words = set(stopwords.words('english')) - negation_list
+        
         self.df['combined_text'] = self.df['title'] + " " + self.df['text']
+        
         self.df['processed_text_list'] = self.df['combined_text'].apply(self.clean_text)
         self.df['clean_text_string'] = self.df['processed_text_list'].apply(lambda x: ' '.join(x))
+        
         self.text_data = self.df['clean_text_string'].values
         
         #region X and y variables here, QUESTION: USE .value or df
@@ -52,11 +72,25 @@ class Preprocessing:
         else: 
             return wordnet.NOUN
 
+    def fix_encoding_errors(self, text):
+        return ftfy.fix_text(text)
+
+    def is_english(self, text):
+ 
+        try:
+            return detect(str(text)) == 'en'
+        except LangDetectException:
+            return False
+
     def clean_text(self, text):
         text = str(text) if text is not None else ""
+        
         # If text is empty Or whitespace, return empty list (Ensure input is a string and not a number or NaN)
         if not text.strip():
             return []
+
+        text = self.fix_encoding_errors(text)
+
         try:
             text = contractions.fix(text)
         except IndexError:
@@ -76,6 +110,7 @@ class Preprocessing:
                 lemma = self.lemmatizer.lemmatize(word.lower(), pos=wn_tag)
                 stem = self.stemmer.stem(lemma)
                 processed_tokens.append(stem)
+        
         return processed_tokens
     
     def split_data(self, test_size, random_state=42):
