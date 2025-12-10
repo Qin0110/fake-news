@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
+import joblib
 
 import nltk
 import contractions
@@ -38,7 +39,7 @@ class Preprocessing:
         self.df['clean_text_string'] = self.df['processed_text_list'].apply(lambda x: ' '.join(x))
         self.text_data = self.df['clean_text_string'].values
         
-        #region X and y variables here
+        #region X and y variables here, QUESTION: USE .value or df
         self.X = self.text_data
         self.y = self.df['label'].values
 
@@ -97,3 +98,8 @@ class Preprocessing:
             stratify=y_test_validate
         )
         return X_train, X_validate, X_test, y_train, y_validate, y_test
+    
+    def dump_variable(self, test_size):
+        X_train, X_validate, X_test, y_train, y_validate, y_test = self.split_data(test_size=test_size)
+        data_package = (X_train, X_validate, X_test, y_train, y_validate, y_test)
+        joblib.dump(data_package, f'{test_size}_split_data.joblib')
