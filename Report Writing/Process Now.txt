@@ -1,0 +1,4 @@
+#Update 11/12/2025
+1. Train test split performance comparison between 7:1.5:1.5, and 8:1:1 done
+2. Smoting is mild because the distribution of the data is approximately 53% True vs 47% Fake
+3. Preprocessed complete, with stemming + lemmitization + stopwords + excluded negation words + basic regex removal
