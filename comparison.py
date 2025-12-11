@@ -86,7 +86,7 @@ class Model_Building:
             factor=3,
             directory='model_tuning',
             project_name='fake_news_cnn',
-            overwrite=True 
+            # overwrite=True 
         )
 
         stop_early = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, mode='min', verbose=1)
@@ -139,7 +139,7 @@ class Model_Building:
         plt.xlabel('Predicted')
         plt.ylabel('Actual')
         plt.title('Confusion Matrix')
-        plt.savefig(f'./model/{filename}Confusion Matrix')
+        plt.savefig(f'./model/{filename}Confusion Matrix.png')
         plt.show()
     
     def plot_history(self, history, filename):
