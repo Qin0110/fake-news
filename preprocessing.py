@@ -6,9 +6,7 @@ import joblib
 
 import nltk
 import contractions
-# Add the ftfy import here
 import ftfy
-# Add langdetect imports
 from langdetect import detect, LangDetectException, DetectorFactory
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -27,6 +25,7 @@ class Preprocessing:
     def __init__(self):
         self.df = pd.read_csv("fake_news.csv")
         self.df.dropna(inplace=True)
+        self.df.drop_duplicates(inplace=True)
         self.df.drop(['author', 'id'], axis=1, inplace=True)
         
         initial_rows = len(self.df)
