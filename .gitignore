@@ -3,3 +3,4 @@ env
 my_tuning_dir/
 __pycache__/
 *.pyc
+model_tuning/
