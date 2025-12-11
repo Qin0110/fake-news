@@ -67,6 +67,12 @@ if __name__ == "__main__":
     real_text = df[df['label'] == 0]['text']
     fake_text = df[df['label'] == 1]['text']
 
+    print("Top 20 Unigrams - REAL News")
+    plot_top_ngrams(real_text, n=1, title="Top 20 Unigrams - REAL News")
+
+    print("Top 20 Unigrams - FAKE News")
+    plot_top_ngrams(fake_text, n=1, title="Top 20 Unigrams - FAKE News")
+
     print("Generating Real News Bigrams...")
     plot_top_ngrams(real_text, n=2, title="Top 20 Bigrams - REAL News")
     
