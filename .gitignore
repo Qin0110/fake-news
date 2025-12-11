@@ -1,4 +1,5 @@
 env
 *.csv
-__pycache__/
 my_tuning_dir/
+__pycache__/
+*.pyc

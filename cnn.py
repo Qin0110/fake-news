@@ -4,6 +4,7 @@ import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import keras
 import keras_tuner as kt
 from keras.models import Sequential
 from keras.layers import Input, Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout, MaxPooling1D, TextVectorization
@@ -13,9 +14,9 @@ from keras.callbacks import EarlyStopping
 from sklearn.metrics import classification_report, confusion_matrix
 
 #region Uncomment here if anything change to preprocessing
-# preprocessor = Preprocessing()
-# preprocessor.dump_variable(test_size=0.2)
-# preprocessor.dump_variable(test_size=0.3)
+preprocessor = Preprocessing()
+preprocessor.dump_variable(test_size=0.2)
+preprocessor.dump_variable(test_size=0.3)
 
 X_train, X_validate, X_test, y_train, y_validate, y_test = joblib.load('0.3_split_data.joblib')
 
@@ -186,6 +187,7 @@ plot_history(history)
 # --- 3. Plot Confusion Matrix ---
 # Get predictions (probabilities)
 y_pred_probs = hypermodel.predict(X_test)
+keras.saving.save_model(hypermodel, 'best_cnn_model.keras')
 
 #region NOTICE HERE(OUTPUT, sigmoid activation function as last layer)
 # Convert probabilities to 0 or 1 (Threshold = 0.5)
