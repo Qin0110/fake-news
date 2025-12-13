@@ -134,3 +134,61 @@ class Preprocessing:
         X_train, X_validate, X_test, y_train, y_validate, y_test = self.split_data(test_size=test_size)
         data_package = (X_train, X_validate, X_test, y_train, y_validate, y_test)
         joblib.dump(data_package, f'{test_size}_split_data.joblib')
+
+
+
+class InferencePreprocessor:
+    def __init__(self):
+        self.stemmer = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer()
+
+        negation_list = {
+            'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing',
+            "don't", "aren't", "isn't", "wasn't", "weren't",
+            "won't", "wouldn't", "didn't", "doesn't",
+            "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mustn't"
+        }
+        self.stop_words = set(stopwords.words('english')) - negation_list
+
+    def get_wordnet_pos(self, treebank_tag):
+        if treebank_tag.startswith('J'): 
+            return wordnet.ADJ
+        elif treebank_tag.startswith('V'):
+            return wordnet.VERB
+        elif treebank_tag.startswith('N'): 
+            return wordnet.NOUN
+        elif treebank_tag.startswith('R'): 
+            return wordnet.ADV
+        else: 
+            return wordnet.NOUN
+
+    def fix_encoding_errors(self, text):
+        return ftfy.fix_text(text)
+    
+    def clean_text(self, text):
+        text = str(text).strip()
+        if not text:
+            return ""
+
+        text = self.fix_encoding_errors(text)
+
+        try:
+            text = contractions.fix(text)
+        except IndexError:
+            pass # Keep text as is if library fails (validation)
+
+        text = text.lower()
+        text = re.sub(r'https?://\S+|www\.\S+', '', text)
+        text = re.sub(r'<.*?>', '', text)
+
+        tokens = word_tokenize(text)
+        pos_tags = nltk.pos_tag(tokens)
+        processed_tokens = []
+
+        for word, tag in pos_tags:
+            if word.isalpha() and word not in self.stop_words:
+                wn_tag = self.get_wordnet_pos(tag)
+                lemma = self.lemmatizer.lemmatize(word.lower(), pos=wn_tag)
+                processed_tokens.append(lemma)
+
+        return " ".join(processed_tokens)
