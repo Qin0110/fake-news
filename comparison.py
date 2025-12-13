@@ -84,7 +84,7 @@ class Model_Building:
             objective='val_accuracy',
             max_epochs=50,
             factor=3,
-            directory='model_tuning',
+            directory='model_tuning_2',
             project_name='fake_news_cnn',
             # overwrite=True 
         )
@@ -176,12 +176,6 @@ class Model_Building:
 
 
 if __name__ == "__main__":
-    model_1 = Model_Building(choice=1)
-    best_model = model_1.model_tuning()
-    history = model_1.model_training(best_model)
-    model_1.evaluate_model(best_model, filename='cnn_rnn_0.2_split')
-    model_1.plot_history(history, filename='cnn_rnn_0.2_split')
-
     model_2 = Model_Building(choice=2)
     best_model = model_2.model_tuning()
     history = model_2.model_training(best_model)
