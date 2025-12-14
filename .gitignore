@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 model_tuning/
 model_tuning_2/
+Biderectional_0.2_split/
+Biderectional_0.3_split/

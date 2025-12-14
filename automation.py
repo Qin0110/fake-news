@@ -13,12 +13,12 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import keras
 import keras_tuner as kt
 from keras.models import Sequential
-from keras.layers import Input, Embedding, Conv1D, MaxPooling1D, LSTM, Dense, Dropout, TextVectorization
+from keras.layers import Input, Embedding, Conv1D, MaxPooling1D, LSTM, Dense, Dropout, TextVectorization, Bidirectional
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 class Model_Building:
-    def __init__(self, choice, vocab_size = 5000, max_length = 500):
+    def __init__(self, choice, directory, vocab_size = 5000, max_length = 500):
         self.vocab_size = vocab_size
         self.max_length = max_length
         self.X_train, self.X_validate, self.X_test, self.y_train, self.y_validate, self.y_test = self.dataset_preparation(choice)
@@ -28,6 +28,7 @@ class Model_Building:
             output_sequence_length=self.max_length,
         )
         self.vectorizer.adapt(self.X_train)
+        self.directory = directory
 
     def dataset_preparation(self, choice):
         #region Uncomment here if anything change to preprocessing
@@ -60,10 +61,10 @@ class Model_Building:
         if i < hp.Int('num_conv_layers', 1, 3) - 1:
             model.add(MaxPooling1D(pool_size=2))
             # model.add(Dropout(hp.Float('dropout_rate', 0.1, 0.5, step=0.1)))
-        model.add(LSTM(
-            units=hp.Int('lstm_units', 32, 128, step=32), return_sequences=False, 
-            activation=hp.Choice('lstm_activation', values=['tanh', 'relu'], default='tanh')
-        ))
+        model.add(Bidirectional(LSTM(
+            units=hp.Int('bilstm_units', 32, 128, step=32), return_sequences=False, 
+            activation=hp.Choice('bilstm_activation', values=['tanh', 'relu'], default='tanh')
+        )))
         model.add(Dense(
             units=hp.Int('dense_units', 32, 128, step=32),
             activation=hp.Choice('dense_activation', values=['relu', 'tanh'], default='relu')
@@ -84,7 +85,7 @@ class Model_Building:
             objective='val_accuracy',
             max_epochs=50,
             factor=3,
-            directory='model_tuning_2',
+            directory=self.directory,
             project_name='fake_news_cnn',
             # overwrite=True 
         )
@@ -131,7 +132,7 @@ class Model_Building:
         print("\nClassification Report:\n", report)
 
         final_output = f"Accuracy Score: {accuracy:.4f}\n\n{report}"
-        with open(f'./model/{filename}_classification_report.txt', 'w') as f:
+        with open(f'./model/{filename}_classification_report_Bidrectional.txt', 'w') as f:
             f.write(final_output)
 
         cm = confusion_matrix(self.y_test, y_pred)
@@ -139,7 +140,7 @@ class Model_Building:
         plt.xlabel('Predicted')
         plt.ylabel('Actual')
         plt.title('Confusion Matrix')
-        plt.savefig(f'./model/{filename}Confusion Matrix.png')
+        plt.savefig(f'./model/{filename}Confusion Matrix_Bidrectional.png')
         plt.show()
     
     def plot_history(self, history, filename):
@@ -171,13 +172,19 @@ class Model_Building:
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(f'./model/{filename}_training_validation_curves.png')
+        plt.savefig(f'./model/{filename}_training_validation_curves_Bidrectional.png')
         plt.show()
 
 
 if __name__ == "__main__":
-    model_2 = Model_Building(choice=2)
+    model = Model_Building(choice=1, directory="Biderectional_0.2_split")
+    best_model = model.model_tuning()
+    history = model.model_training(best_model)
+    model.evaluate_model(best_model, filename='cnn_rnn_0.2_split_Bidrectional')
+    model.plot_history(history, filename='cnn_rnn_0.2_split_Bidrectional')
+
+    model_2 = Model_Building(choice=2, directory="Biderectional_0.3_split")
     best_model = model_2.model_tuning()
     history = model_2.model_training(best_model)
-    model_2.evaluate_model(best_model, filename='cnn_rnn_0.3_split')
-    model_2.plot_history(history, filename='cnn_rnn_0.3_split')
+    model_2.evaluate_model(best_model, filename='cnn_rnn_0.3_split_Bidrectional')
+    model_2.plot_history(history, filename='cnn_rnn_0.3_split_Bidrectional')
