@@ -1,11 +1,12 @@
 import streamlit as st
 import tensorflow as tf
 from preprocessing import InferencePreprocessor
+import keras
 
 
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model('model/best_cnn_rnn_model.keras')
+    return keras.models.load_model('model/best_cnn_rnn_model.keras')
 
 @st.cache_resource
 def load_preprocessor():
