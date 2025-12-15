@@ -4,6 +4,8 @@ from preprocessing import InferencePreprocessor
 import nltk
 import base64
 import joblib
+import tensorflow as tf 
+import speech_recognition as sr
 
 
 
@@ -16,6 +18,11 @@ nltk.download('wordnet', quiet=True)
 nltk.download('omw-1.4', quiet=True)
 
 st.set_page_config(layout="wide", page_title="Fake news Detection", initial_sidebar_state="collapsed")
+
+if 'article_title' not in st.session_state:
+    st.session_state['article_title'] = ""
+if 'article_text' not in st.session_state:
+    st.session_state['article_text'] = ""
 
 @st.cache_resource
 def load_resources():
@@ -36,6 +43,29 @@ def load_resources():
     return model, vectorizer, preprocessor, model_name
 
 model, vectorizer, preprocessor, model_name = load_resources()
+
+def transcribe_speech():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎤 Listening... Speak now!")
+        r.adjust_for_ambient_noise(source)
+        try:
+            audio_data = r.listen(source, timeout=5)
+            st.success("Processing audio...")
+            text = r.recognize_google(audio_data)
+            return text
+        except sr.WaitTimeoutError:
+            st.warning("No speech detected. Please try again.")
+            return None
+        except sr.UnknownValueError:
+            st.error("Could not understand audio.")
+            return None
+        except sr.RequestError as e:
+            st.error(f"Could not request results from service; {e}")
+            return None
+        except Exception as e:
+            st.error(f"Microphone error: {e}. (Ensure PyAudio is installed: `pip install pyaudio`)")
+            return None
 
 
 def get_base64_of_bin_file(bin_file):

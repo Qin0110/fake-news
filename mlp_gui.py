@@ -1,0 +1,309 @@
+import streamlit as st
+import tensorflow as tf
+from preprocessing import InferencePreprocessor
+import nltk
+import base64
+import joblib
+import tensorflow as tf 
+import speech_recognition as sr
+
+
+
+import nltk
+
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('averaged_perceptron_tagger_eng', quiet=True)
+nltk.download('wordnet', quiet=True)
+nltk.download('omw-1.4', quiet=True)
+
+st.set_page_config(layout="wide", page_title="Fake news Detection", initial_sidebar_state="collapsed")
+
+if 'article_title' not in st.session_state:
+    st.session_state['article_title'] = ""
+if 'article_text' not in st.session_state:
+    st.session_state['article_text'] = ""
+
+@st.cache_resource
+def load_resources():
+    try:
+        model = joblib.load("MLP/mlp_fake_news_model.pkl")
+        vectorizer = joblib.load("MLP/tfidf_vectorizer.pkl")
+        model_name = "MLP Classifier (Scikit-Learn)"
+    except Exception as e:
+        st.error(f"Error loading model/vectorizer: {e}. Ensure .pkl files are in the directory.")
+        return None, None, None, None
+
+    try:
+        preprocessor = InferencePreprocessor()
+    except Exception as e:
+        st.error(f"Error loading preprocessor: {e}")
+        return None, None, None, None
+        
+    return model, vectorizer, preprocessor, model_name
+
+model, vectorizer, preprocessor, model_name = load_resources()
+
+def transcribe_speech():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎤 Listening... Speak now!")
+        r.adjust_for_ambient_noise(source)
+        try:
+            audio_data = r.listen(source, timeout=5)
+            st.success("Processing audio...")
+            text = r.recognize_google(audio_data)
+            return text
+        except sr.WaitTimeoutError:
+            st.warning("No speech detected. Please try again.")
+            return None
+        except sr.UnknownValueError:
+            st.error("Could not understand audio.")
+            return None
+        except sr.RequestError as e:
+            st.error(f"Could not request results from service; {e}")
+            return None
+        except Exception as e:
+            st.error(f"Microphone error: {e}. (Ensure PyAudio is installed: `pip install pyaudio`)")
+            return None
+
+
+def get_base64_of_bin_file(bin_file):
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode() 
+    except FileNotFoundError:
+        return ""
+
+def inject_custom_css():
+    bin_str = get_base64_of_bin_file('fakenews1.jpg') 
+    
+    background_style = f"""
+        background-image: url("data:image/png;base64,{bin_str}");
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center top;
+    """ if bin_str else "background-color: #1e1e1e;" 
+
+    st.markdown(f"""
+    <style>
+        /* 1. Global Background */
+        .stApp {{
+            {background_style}
+        }}
+        
+        /* 2. Make the main container transparent */
+        .block-container {{
+            background-color: transparent !important;
+            padding-top: 2rem;
+            max-width: 1200px;
+        }}
+
+        /* 3. Header Styling */
+        h1 {{
+            color: white !important;
+            font-family: 'Helvetica Neue', sans-serif;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px #000000;
+            margin-bottom: 0px;
+        }}
+        .subtitle {{
+            color: #ddd;
+            font-size: 16px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px #000000;
+        }}
+
+        /* 4. THE WHITE CARD (Input Section) */
+        [data-testid="stForm"] {{
+            background-color: rgba(179, 204, 204, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }}
+
+        /* 5. Custom Blue Labels for Inputs */
+        .custom-label {{
+            background-color: #3f51b5;
+            color: white;
+            padding: 4px 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }}
+
+        /* 6. Input Fields (Dark Mode Style) */
+        .stTextInput input, .stTextArea textarea {{
+            background-color: #2b2c34 !important;
+            color: white !important;
+            border-radius: 6px;
+            border: 1px solid #444;
+        }}
+        .stTextInput label, .stTextArea label {{
+            display: none;
+        }}
+
+        /* 7. Fancy Button Style */
+        div.stFormSubmitButton > button {{
+            appearance: none;
+            background-color: #FFFFFF !important;
+            border-radius: 40em;
+            border-style: none;
+            box-shadow: #ADCFFF 0 -12px 6px inset;
+            box-sizing: border-box;
+            color: #000000 !important;
+            cursor: pointer;
+            display: inline-block;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.24px;
+            margin: 0;
+            outline: none;
+            padding: 1rem 1.3rem;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            width: 100%;
+        }}
+
+        div.stFormSubmitButton > button:hover {{
+            background-color: #07bd06 !important;  
+            box-shadow: #057804 0 -6px 8px inset;
+            transform: scale(1.125);
+        }}
+
+        div.stFormSubmitButton > button:active {{
+            transform: scale(1.025);
+        }}
+
+        /* Dark Expander for Diagnostics */
+        .streamlit-expanderHeader {{
+            background-color: #1a1a1a !important;
+            color: white !important;
+            border: 1px solid #333;
+        }}
+        .streamlit-expanderContent {{
+            background-color: #1a1a1a !important;
+            color: #ccc !important;
+            border: 1px solid #333;
+            border-top: none;
+        }}
+        
+    </style>
+    """, unsafe_allow_html=True)
+
+inject_custom_css()
+
+
+col_h1, col_h2 = st.columns([0.05, 0.95])
+with col_h2:
+    st.markdown("<h1>📰  FAKE NEWS DETECTION SYSTEM </h1>", unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Utilizing advanced deep learning models for news integrity assessment.</p>', unsafe_allow_html=True)
+
+
+with st.form("analysis_form"):
+    st.markdown('<h3 style="color:#333; margin-top:0;">Article Submission</h3>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="custom-label">Article Title</div>', unsafe_allow_html=True)
+    title = st.text_input("Article Title", placeholder="Paste the headline here...")
+
+    st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True) # Spacer
+
+    st.markdown('<div class="custom-label">Article Body Content</div>', unsafe_allow_html=True)
+    text = st.text_area("Article Body Content", placeholder="Paste the content here...", height=200)
+    
+    submitted = st.form_submit_button("ANALYZE ARTICLE INTEGRITY")
+
+
+if submitted:
+    if not model or not vectorizer:
+        st.error("⚠️ Model resources are missing. Please check .pkl files.")
+    elif not title.strip() or not text.strip():
+        st.warning("⚠️ Please enter both a title and article body.")
+    else:
+        with st.spinner("Analyzing patterns..."):
+            try:
+                combined_text = f"{title} {text}"
+                cleaned_text = preprocessor.clean_text(combined_text)
+                
+                input_vector = vectorizer.transform([cleaned_text])
+                
+                probs = model.predict_proba(input_vector)
+                prediction_prob = probs[0][1] 
+                
+                is_fake = prediction_prob >= 0.5
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                if is_fake:
+                    verdict_text = "POTENTIAL MISINFORMATION"
+                    verdict_subtext = "Integrity Analysis detects significant anomalies."
+                    verdict_bg = "linear-gradient(90deg, #D32F2F 0%, #FFCDD2 100%)"
+                    icon_bg = "#B71C1C"
+                    verdict_icon = "🛑"
+                    confidence = prediction_prob
+                    conf_label = "Confidence Score (Fake)"
+                    bar_color = "#D32F2F"
+                else:
+                    verdict_text = "VERIFIED AUTHENTICITY"
+                    verdict_subtext = "Content aligns with standard reporting patterns."
+                    verdict_bg = "linear-gradient(90deg, #1565C0 0%, #BBDEFB 100%)"
+                    icon_bg = "#0D47A1"
+                    verdict_icon = "🛡️"
+                    confidence = 1 - prediction_prob
+                    conf_label = "Confidence Score (Real)"
+                    bar_color = "#1565C0"
+
+                st.markdown(f"""
+                <div style="background: {verdict_bg}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); color: white; display: flex; align-items: center; margin-bottom: 25px;">
+                    <div style="background-color: {icon_bg}; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-right: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        {verdict_icon}
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; color: white; font-weight: 800; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">{verdict_text}</h2>
+                        <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">{verdict_subtext}</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                col_res1, col_res2 = st.columns([1, 4])
+                
+                with col_res1:
+                    st.markdown(f"""
+                    <div style="text-align: center; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px;">
+                        <div style="color: #555; font-size: 12px; font-weight: bold; text-transform: uppercase;">{conf_label}</div>
+                        <div style="color: {bar_color}; font-size: 36px; font-weight: 900;">{confidence:.1%}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col_res2:
+                    st.write("") # Spacer
+                    st.write("") 
+                    st.markdown(f"""
+                    <div style="background-color: rgba(255,255,255,0.5); border-radius: 20px; height: 25px; width: 100%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="width: {confidence*100}%; background-color: {bar_color}; height: 100%; border-radius: 20px; transition: width 1s ease-in-out;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <span style="font-size: 12px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">Low Confidence</span>
+                        <span style="font-size: 12px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">High Confidence</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander("System Diagnostics"):
+                    st.markdown(f"""
+                    <ul style="color: #ccc;">
+                        <li><b>Raw Probability (Fake Class):</b> <code>{prediction_prob:.6f}</code></li>
+                        <li><b>Model Used:</b> <code style="color: #4fc3f7">{model_name}</code></li>
+                        <li><b>Text Length:</b> <code>{len(cleaned_text)} chars</code></li>
+                    </ul>
+                    <p style="color: #888; font-style: italic; font-size: 12px; margin-left: 20px;">(This prediction is based on structural, lexical, and semantic features extracted from the text.)</p>
+                    """, unsafe_allow_html=True)
+
+            except Exception as e:
+                st.error(f"Analysis Failed: {e}")
