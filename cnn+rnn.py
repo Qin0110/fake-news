@@ -83,7 +83,7 @@ class Model_Building:
             factor=3,
             directory='model_tuning',
             project_name='fake_news_cnn',
-            overwrite=True 
+            # overwrite=True 
         )
 
         stop_early = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, mode='min', verbose=1)
@@ -99,22 +99,22 @@ class Model_Building:
 
         best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
         best_model = tuner.hypermodel.build(best_hps)
-        keras.saving.save_model(best_model, './model/best_cnn_rnn_model.keras')
 
         return best_model
     
     def model_training(self, model):
-        stop_early = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True, mode='min', verbose=1)
+        stop_early = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, mode='min', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-6, verbose=1)
-        checkpoint = ModelCheckpoint('./model/best_cnn_rnn_model.keras', monitor='val_accuracy', save_best_only=True, mode='min', verbose=1)
 
         history = model.fit(
             self.X_train, 
             self.y_train, 
             epochs=100, 
             validation_data=(self.X_validate, self.y_validate), 
-            callbacks=[stop_early, reduce_lr, checkpoint]
+            callbacks=[stop_early, reduce_lr]
         )
+
+        keras.saving.save_model(model, './model/final_cnn_rnn_model.keras')
         return history
     
     def evaluate_model(self, model):
