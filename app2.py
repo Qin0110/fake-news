@@ -3,6 +3,8 @@ import tensorflow as tf
 from preprocessing import InferencePreprocessor
 import nltk
 import base64
+import speech_recognition as sr  # Added for speech recognition
+
 
 
 st.set_page_config(layout="wide", page_title="Fake news Detection", initial_sidebar_state="collapsed")
@@ -29,6 +31,31 @@ def load_model_and_prep(model_path):
 
 model, model_name, preprocessor = load_model_and_prep('model/best_cnn_rnn_model.keras')
 
+def transcribe_speech():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        placeholder = st.empty()
+        placeholder.info("🎤 Listening... Speak now!")
+        r.adjust_for_ambient_noise(source)
+        try:
+            audio_data = r.listen(source, timeout=5)
+            placeholder.success("Processing audio...")
+            text = r.recognize_google(audio_data)
+            placeholder.empty()
+            return text
+        except sr.WaitTimeoutError:
+            placeholder.warning("No speech detected.")
+            return None
+        except sr.UnknownValueError:
+            placeholder.error("Could not understand audio.")
+            return None
+        except sr.RequestError as e:
+            placeholder.error(f"API Error: {e}")
+            return None
+        except Exception as e:
+            placeholder.error(f"Microphone error: {e}")
+            return None
+        
 
 # --- CSS STYLING (THE DESIGN LOGIC) ---
 def get_base64_of_bin_file(bin_file):
@@ -38,6 +65,8 @@ def get_base64_of_bin_file(bin_file):
         return base64.b64encode(data).decode() # css understand
     except FileNotFoundError:
         return ""
+    
+
 
 def inject_custom_css():
     bin_str = get_base64_of_bin_file('fakenews1.jpg') 
@@ -189,29 +218,62 @@ with col_h2:
 
 
 # 2. Input Section (The White Card)
+# --- INITIALIZE SESSION STATE ---
+# We need this to store the voice text so it doesn't disappear when the app refreshes
+# --- INITIALIZE SESSION STATE ---
+if 'speech_input' not in st.session_state:
+    st.session_state['speech_input'] = ""
+
+# 2. Input Section (The White Card)
 with st.form("analysis_form"):
     st.markdown('<h3 style="color:#333; margin-top:0;">Article Submission</h3>', unsafe_allow_html=True)
     
     # Custom Labels + Inputs
     st.markdown('<div class="custom-label">Article Title</div>', unsafe_allow_html=True)
-    title = st.text_input("Article Title", placeholder="Paste the headline here...") # Label hidden via CSS
+    title = st.text_input("Article Title", placeholder="Paste the headline here...") 
 
-    st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True) # Spacer
+    st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True) 
 
-    st.markdown('<div class="custom-label">Article Body Content</div>', unsafe_allow_html=True)
-    text = st.text_area("Article Body Content", placeholder="Paste the content here...", height=200) # Label hidden via CSS
+    # --- RECORD BUTTON ROW ---
+    # Left: Label, Right: Record Button
+    col_label, col_btn = st.columns([0.85, 0.15])
     
-    # Submit Button (Centered by CSS width=100%)
+    with col_label:
+        st.markdown('<div class="custom-label" style="margin-top: 5px;">Article Body Content</div>', unsafe_allow_html=True)
+    
+    with col_btn:
+        # We call this 'record_click' to distinguish it from the main submit
+        record_click = st.form_submit_button("🎤 Record")
+
+    # --- TEXT AREA ---
+    text = st.text_area(
+        "Article Body Content", 
+        value=st.session_state['speech_input'], 
+        placeholder="Paste content or click Record...", 
+        height=200
+    ) 
+    
     submitted = st.form_submit_button("ANALYZE ARTICLE INTEGRITY")
 
 
-# 3. Results Section (Transparent Background)
+# 3. Logic Handling
+
+if record_click:
+    transcribed_text = transcribe_speech()
+    if transcribed_text:
+        current_text = st.session_state['speech_input']
+        if current_text:
+            st.session_state['speech_input'] = current_text + " " + transcribed_text
+        else:
+            st.session_state['speech_input'] = transcribed_text
+        
+        st.rerun() 
+
 if submitted:
     if not title.strip() or not text.strip():
         st.warning("⚠️ Please enter both a title and article body.")
     else:
         with st.spinner("Analyzing patterns..."):
-            # Backend Processing
             try:
                 combined_text = f"{title} {text}"
                 cleaned_text = preprocessor.clean_text(combined_text)
@@ -223,22 +285,18 @@ if submitted:
                 # --- RESULTS UI ---
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # 1. Define Styles based on prediction
                 if is_fake:
                     verdict_text = "POTENTIAL MISINFORMATION"
                     verdict_subtext = "Integrity Analysis detects significant anomalies."
-                    # Red Gradient
                     verdict_bg = "linear-gradient(90deg, #D32F2F 0%, #FFCDD2 100%)"
                     icon_bg = "#B71C1C"
                     verdict_icon = "🛑"
                     confidence = prediction_prob
                     conf_label = "Confidence Score (Fake)"
                     bar_color = "#D32F2F"
-                
                 else:
                     verdict_text = "VERIFIED AUTHENTICITY"
                     verdict_subtext = "Content aligns with standard reporting patterns."
-                    # Blue Gradient
                     verdict_bg = "linear-gradient(90deg, #1565C0 0%, #BBDEFB 100%)"
                     icon_bg = "#0D47A1"
                     verdict_icon = "🛡️"
@@ -246,8 +304,6 @@ if submitted:
                     conf_label = "Confidence Score (Real)"
                     bar_color = "#1565C0"
 
-                # 2. Render the "Verdict Card"
-                # NOTICE: The HTML below is aligned to the LEFT to prevent it from becoming a code block
                 st.markdown(f"""
                 <div style="background: {verdict_bg}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); color: white; display: flex; align-items: center; margin-bottom: 25px;">
                     <div style="background-color: {icon_bg}; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-right: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -260,11 +316,9 @@ if submitted:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # 3. Metrics & Progress Bar (Updated Design)
+                # Metrics
                 col_res1, col_res2 = st.columns([1, 4])
-                
                 with col_res1:
-                    # Big Number
                     st.markdown(f"""
                     <div style="text-align: center; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px;">
                         <div style="color: #555; font-size: 12px; font-weight: bold; text-transform: uppercase;">{conf_label}</div>
@@ -273,20 +327,15 @@ if submitted:
                     """, unsafe_allow_html=True)
                 
                 with col_res2:
-                    st.write("") # Spacer to align
                     st.write("") 
-                    # Progress Bar
+                    st.write("") 
                     st.markdown(f"""
                     <div style="background-color: rgba(255,255,255,0.5); border-radius: 20px; height: 25px; width: 100%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="width: {confidence*100}%; background-color: {bar_color}; height: 100%; border-radius: 20px; transition: width 1s ease-in-out;"></div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                        <span style="font-size: 12px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">Low Confidence</span>
-                        <span style="font-size: 12px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px;">High Confidence</span>
-                    </div>
                     """, unsafe_allow_html=True)
 
-                # System Diagnostics (Expander)
+                # Diagnostics
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander("System Diagnostics"):
                     st.markdown(f"""
@@ -294,7 +343,6 @@ if submitted:
                         <li><b>Raw Probability:</b> <code>{prediction_prob:.6f}</code></li>
                         <li><b>Model Used:</b> <code style="color: #4fc3f7">{model_name}</code></li>
                     </ul>
-                    <p style="color: #888; font-style: italic; font-size: 12px; margin-left: 20px;">(This prediction is based on structural, lexical, and semantic features extracted from the text.)</p>
                     """, unsafe_allow_html=True)
 
             except Exception as e:
