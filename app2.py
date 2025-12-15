@@ -253,6 +253,25 @@ with st.form("analysis_form"):
         height=200
     ) 
     
+    words = text.split()
+    word_count = len(words)
+    min_words = 20 
+
+    if word_count < min_words and text != "":
+        st.markdown(f"""
+            <div style="
+                padding: 10px;
+                border-radius: 10px;
+                background-color: #ffcccc; 
+                color: #EE4B2B;
+                border: 1px ;
+                font-weight: bold;
+                margin-bottom: 15   px;
+            ">
+                ⚠️ Please enter at least {min_words} words. Current: {word_count}
+            </div>
+            """, unsafe_allow_html=True)
+
     submitted = st.form_submit_button("ANALYZE ARTICLE INTEGRITY")
 
 
