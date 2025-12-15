@@ -2,20 +2,11 @@ import streamlit as st
 import tensorflow as tf
 from preprocessing import InferencePreprocessor
 import keras
-import joblib
-import nltk
 
 
 @st.cache_resource
 def load_model():
-    try:
-        model = joblib.load("mlp_fake_news_model.pkl")
-        vectorizer = joblib.load("tfidf_vectorizer.pkl") 
-        return model, vectorizer
-    except FileNotFoundError as e:
-        st.error(f"Missing file: {e}. Please ensure mlp_fake_news_model.pkl and tfidf_vectorizer.pkl are in the directory.")
-        return None, None
-
+    return keras.models.load_model('model/best_cnn_rnn_model.keras')
 
 @st.cache_resource
 def load_preprocessor():
