@@ -88,6 +88,7 @@ class Model_Building:
 
         stop_early = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, mode='min', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-6, verbose=1)
+        
 
         tuner.search(
             self.X_train, 
@@ -105,16 +106,17 @@ class Model_Building:
     def model_training(self, model):
         stop_early = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, mode='min', verbose=1)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-6, verbose=1)
+        checkpoint = ModelCheckpoint('model/best_cnn_rnn_model.keras', monitor='val_loss', save_best_only=True, mode='min', verbose=1)
 
         history = model.fit(
             self.X_train, 
             self.y_train, 
             epochs=100, 
             validation_data=(self.X_validate, self.y_validate), 
-            callbacks=[stop_early, reduce_lr]
+            callbacks=[stop_early, reduce_lr, checkpoint]
         )
 
-        keras.saving.save_model(model, './model/final_cnn_rnn_model.keras')
+        keras.saving.save_model(model, './model/best_cnn_rnn_model.keras')
         return history
     
     def evaluate_model(self, model):
