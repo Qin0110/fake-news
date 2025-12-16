@@ -248,7 +248,7 @@ with st.form("analysis_form"):
                 color: #EE4B2B;
                 border: 1px ;
                 font-weight: bold;
-                margin-bottom: 15   px;
+                margin-bottom: 15px;
             ">
                 ⚠️ Please enter at least {min_words} words. Current: {word_count}
             </div>
@@ -271,6 +271,8 @@ if record_click:
 if submitted:
     if not title.strip() or not text.strip():
         st.warning("⚠️ Please enter both a title and article body.")
+    elif word_count < min_words:
+        pass
     else:
         # Use a single spinner for the whole process
         with st.spinner("Analyzing patterns..."):
