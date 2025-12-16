@@ -7,6 +7,7 @@ import speech_recognition as sr
 from lime.lime_text import LimeTextExplainer
 import streamlit.components.v1 as components
 import numpy as np
+import re
 
 st.set_page_config(layout="wide", page_title="Fake news Detection", initial_sidebar_state="collapsed")
 
@@ -93,7 +94,7 @@ def get_base64_of_bin_file(bin_file):
         return ""
 
 def inject_custom_css():
-    bin_str = get_base64_of_bin_file('fakenews1.jpg') 
+    bin_str = get_base64_of_bin_file('fakenews5.jpg') 
     
     st.markdown(f"""
     <style>
@@ -115,12 +116,13 @@ def inject_custom_css():
             text-shadow: 2px 2px 4px #000000;
             margin-bottom: 0px;
         }}
-        .subtitle {{
+        div[data-testid="stMarkdownContainer"] .subtitle {{
             color: #ddd;
-            font-size: 16px;
+            font-size: 20px;
             margin-bottom: 30px;
             text-shadow: 1px 1px 2px #000000;
         }}
+
         
         /* The White Card (Input) */
         [data-testid="stForm"] {{
@@ -185,6 +187,23 @@ def inject_custom_css():
         div.stFormSubmitButton > button:active {{
             transform: scale(1.025);
         }}
+        /* Word Feature Bars */
+        .feature-bar-container {{
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }}
+        .feature-bar {{
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
         .streamlit-expanderHeader {{
             background-color: #1a1a1a !important;
             color: white !important;
@@ -216,15 +235,15 @@ if 'speech_input' not in st.session_state:
 
 # 2. Input Section
 with st.form("analysis_form"):
-    st.markdown('<h3 style="color:#333; margin-top:0;">Article Submission</h3>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#333; margin-top:0;">Article Submission</h1>', unsafe_allow_html=True)
     
-    st.markdown('<div class="custom-label">Article Title</div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#333; font-size:25px;">Article Title</h1>', unsafe_allow_html=True)
     title = st.text_input("Article Title", placeholder="Paste the headline here...") 
     st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True) 
 
     col_label, col_btn = st.columns([0.85, 0.15])
     with col_label:
-        st.markdown('<div class="custom-label" style="margin-top: 5px;">Article Body Content</div>', unsafe_allow_html=True)
+        st.markdown('<h1 style="color:#333; font-size:25px;">Article Body Content</h1>', unsafe_allow_html=True)
     with col_btn:
         record_click = st.form_submit_button("🎤 Record")
 
@@ -351,20 +370,18 @@ if submitted:
                 with st.container():
                     st.markdown("""
                     <div style="
-                        background-color: rgba(30, 30, 30, 0.80);
+                        background-color: rgba(30, 30, 30, 0.85);
                         padding: 25px;
-                        border-radius: 10px 10px 0px 0px;
+                        border-radius: 12px;
                         border: 1px solid #444;
                         box-shadow: 0 10px 25px rgba(0,0,0,0.4);
                         margin-top: 30px;
                     ">
-                        <h3 style="color:white;">🔍 Content Analysis: Why was this predicted?</h3>
+                        <h3 style="color:white;">🔍 Content Analysis: Highlighted Text</h3>
                     """, unsafe_allow_html=True)
 
-                    with st.spinner("Calculating word contributions..."):
-                        class_names = ["Real", "Fake"]
-                        explainer = LimeTextExplainer(class_names=class_names)
-
+                    with st.spinner("Highlighting important words..."):
+                        explainer = LimeTextExplainer(class_names=["Real", "Fake"])
                         exp = explainer.explain_instance(
                             combined_text,
                             lime_predict_proba,
@@ -372,92 +389,156 @@ if submitted:
                             num_samples=500
                         )
 
-                 
-                        lime_html = exp.as_html()
-                        lime_html = lime_html.replace(
-                            "<body>", 
-                            '<body style="background-color: rgba(255,255,255); color: #000 !important; margin: 0; padding: 10px; border-radius: 10px;">'
-                        )
-                        num_lines = len(exp.as_list()) + 10  
-                        approx_height = min(600, num_lines * 20)
+                        features = exp.as_list()
+                        max_score = max(abs(score) for _, score in features)
 
-                        components.html(
+                        highlighted_text = combined_text
+
+                        for word, score in features:
+                            if len(word.strip()) < 2:
+                                continue
+
+                            intensity = abs(score) / max_score
+                            opacity = 0.15 + intensity * 0.55  # 0.15 → 0.70
+
+                            if score > 0:
+                                color = f"rgba(220,38,38,{opacity})"   # FAKE
+                            else:
+                                color = f"rgba(14,165,233,{opacity})"  # REAL
+
+                            highlighted_text = re.sub(
+                                rf"\b({re.escape(word)})\b",
+                                rf"<span style='background:{color}; padding:2px 4px; border-radius:4px; font-weight:600;'>\1</span>",
+                                highlighted_text,
+                                flags=re.IGNORECASE
+                            )
+
+                        st.markdown(
                             f"""
                             <div style="
-                                max-height: 500px;
-
-                                margin-top: 10px;    
-                                margin-bottom: 10px;
-                                color: #000 !important; 
-                                border-radius: 10px;
-                                padding: 10px;
+                                background: rgba(255,255,255,0.97);
+                                padding: 22px;
+                                border-radius: 12px;
+                                max-height: 380px;
+                                overflow-y: auto;
+                                font-size: 0.95rem;
+                                line-height: 1.65;
+                                color: #000;
                             ">
-                                {lime_html}
+                                {highlighted_text}
                             </div>
                             """,
-                            height=approx_height,
-
-                            scrolling=True 
+                            unsafe_allow_html=True
                         )
+
+                    st.markdown("</div>", unsafe_allow_html=True)
+
 
 
                 with st.container():
-                        
-                    st.markdown('<h4 style="color:white; margin-top:20px; padding: 10px; background-color: rgba(30, 30, 30); border-radius: 5px;">Top Influential Words</h4>', unsafe_allow_html=True)
-
-                    col_real, col_fake = st.columns(2)
+                    st.markdown("""
+                    <div style="
+                        background-color: rgba(30, 30, 30, 0.85);
+                        padding: 25px;
+                        border-radius: 12px;
+                        border: 1px solid #444;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+                        margin-top: 30px;
+                    ">
+                        <h3 style="color:white;">Top Influential Words</h3>
+                    """, unsafe_allow_html=True)
+                    
                     features = exp.as_list()
                     fake_words = sorted([f for f in features if f[1] > 0], key=lambda x: x[1], reverse=True)
-                    real_words = sorted([f for f in features if f[1] < 0], key=lambda x: x[1]) # Sort by magnitude (most negative first)
+                    real_words = sorted([f for f in features if f[1] < 0], key=lambda x: x[1])
+                    max_chars = 15  # maximum characters before truncating
+                    # Find maximum absolute score among all words (both real and fake)
+                    all_scores = [abs(score) for _, score in features]
+                    max_score = max(all_scores, default=1)
 
                     col1, col2 = st.columns(2)
 
+                    # REAL evidence
                     with col1:
-                        st.markdown(
-                            """
-                            <div style="background-color: rgb(10, 6, 114); padding: 10px; border-radius: 5px; border: 1px solid rgb(69, 64, 204); margin-bottom: 10px;">
-                                🛡️ <strong>Words indicating REAL</strong>
+                        st.markdown(f"""
+                        <div style="background: linear-gradient(90deg, #1565C0 0%, #BBDEFB 100%); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); color: white; display: flex; align-items: center; margin-bottom: 25px;">
+                            <div style="background-color:  #0D47A1; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-right: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                                🛡️
                             </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        for w, v in real_words:
-                            # Using a progress bar or metric looks cleaner than raw HTML text
-                            st.markdown(
-                                f"""
-                                <div style="background-color: rgb(69, 64, 204); padding: 10px; border-radius: 5px; margin-bottom: 5px; border-left: 5px solid rgb(69, 64, 204);">
-                                    <span style="font-weight:bold;; font-size: 1.1em;">{w}</span>
-                                    <span style="float:right; font-size: 0.9em;">{abs(v):.4f}</span>
-                                </div>
-                                """, 
-                                unsafe_allow_html=True
-                            )
+                            <div>
+                                <h2 style="margin: 0; color: white; font-weight: 800; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Evidence for REAL</h2>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
+                        if not real_words:
+                            st.caption("No significant words found pointing to 'Real'.")
+                        
+                        for word, score in real_words:  
+                            display_word = word if len(word) <= max_chars else word[:max_chars] + "..."
+                            width_pct = min(abs(score) / max_score * 100, 100)
+                            
+                            st.markdown(f"""
+                            <div class="feature-bar-container" style="margin-bottom:5px;">
+                                <div class="feature-bar" style="
+                                    width: {width_pct}%; 
+                                    min-width: {max_chars*8}px;  /* approximate width for 20 characters */
+                                    background: linear-gradient(90deg, #0ea5e9, #38bdf8); 
+                                    padding: 5px 10px; 
+                                    border-radius: 5px;
+                                    color: #FFFFFF;
+                                    font-size: 0.8rem;
+                                    white-space: nowrap;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                ">
+                                    {display_word}
+                                </div>
+                                <span style="margin-left: 10px; color: #FFFFFF; font-size: 0.8rem;">{abs(score):.4f}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                    # FAKE evidence
                     with col2:
-                        st.markdown(
-                            """
-                            <div style="background-color: rgb(85, 7, 7); padding: 10px; border-radius: 5px; border: 1px solid #F44336; margin-bottom: 10px;">
-                                🛑 <strong>Words indicating FAKE</strong>
+                        st.markdown(f"""
+                        <div style="background: linear-gradient(90deg, #D32F2F 0%, #FFCDD2 100%); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); color: white; display: flex; align-items: center; margin-bottom: 25px;">
+                            <div style="background-color: #B71C1C; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-right: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                                🚨
                             </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        for w, v in fake_words:
-                            st.markdown(
-                                f"""
-                                <div style="background-color: rgba(244, 67, 54); padding: 10px; border-radius: 5px; margin-bottom: 5px; border-left: 5px solid #F44336;">
-                                    <span style="font-weight:bold;; font-size: 1.1em;">{w}</span>
-                                    <span style="float:right; font-size: 0.9em;">{v:.4f}</span>
+                            <div>
+                                <h2 style="margin: 0; color: white; font-weight: 800; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Words indicating FAKE</h2>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        if not fake_words:
+                            st.caption("No significant words found pointing to 'Fake'.")
+
+                        for word, score in fake_words:  
+                            display_word = word if len(word) <= max_chars else word[:max_chars] + "..."
+                            width_pct = min(abs(score) / max_score * 100, 100)
+                            
+                            st.markdown(f"""
+                            <div class="feature-bar-container" style="margin-bottom:5px;">
+                                <div class="feature-bar" style="
+                                    width: {width_pct}%; 
+                                    min-width: {max_chars*8}px;  /* approximate width for 20 characters */
+                                    background: linear-gradient(90deg, #dc2626, #f87171); 
+                                    padding: 5px 10px; 
+                                    border-radius: 5px;
+                                    color: #FFFFFF;
+                                    font-size: 0.8rem;
+                                    white-space: nowrap;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                ">
+                                    {display_word}
                                 </div>
-                                """, 
-                                unsafe_allow_html=True
-                            )
-
-
-
-
-
-
+                                <span style="margin-left: 10px; color: #FFFFFF; font-size: 0.8rem;">{score:.4f}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        st.markdown("</div>", unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Analysis Failed: {e}")
