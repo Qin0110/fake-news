@@ -6,7 +6,7 @@ import seaborn as sns
 import tensorflow as tf
 
 X_train, X_validate, X_test, y_train, y_validate, y_test = joblib.load('0.2_split_data.joblib')
-model = tf.keras.models.load_model('./model/final_cnn_rnn_model.keras')
+model = tf.keras.models.load_model('./model/best_cnn_rnn_model.keras')
 
 y_pred_prob = model.predict(X_test)
 y_pred = (y_pred_prob > 0.5).astype(int)
@@ -20,3 +20,4 @@ plt.xlabel('Predicted')
 plt.ylabel('Actual')
 plt.title('Confusion Matrix')
 plt.show()
+
