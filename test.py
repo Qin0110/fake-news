@@ -1,20 +1,24 @@
 import joblib   
 import keras
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, auc, roc_auc_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, auc, roc_auc_score, f1_score, recall_score, precision_score
 import matplotlib.pyplot as plt
-import seaborn as sns
-import tensorflow as tf
-import json
+from matplotlib.patches import Polygon
+import numpy as np
 
 X_train, X_validate, X_test, y_train, y_validate, y_test = joblib.load('0.2_split_data.joblib')
 # model = joblib.load('mlp_fake_news_model_0.2.pkl')
 # vectorizer = joblib.load('tfidf_vectorizer_0.2.pkl')
+# X_test = vectorizer.transform(X_test)
 model = keras.models.load_model('./model/best_cnn_rnn_model.keras')
 model.summary()
 
-# X_test = vectorizer.transform(X_test)
-# y_pred_prob = model.predict(X_test).ravel()  # Flatten to 1D array
-# y_pred = (y_pred_prob > 0.5).astype(int)
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("f1_score:", f1_score(y_test, y_pred))
+print("recall_score:", recall_score(y_test, y_pred))
+print("precision_score:", precision_score(y_test, y_pred))
 
 # print("First 10 predictions:", y_pred_prob[:10])
 
@@ -30,33 +34,36 @@ model.summary()
 # plt.title('Confusion Matrix')
 # plt.show()
 
-# model.summary()
-
-# config = model.get_config()
-
-# keras.utils.plot_model(
-#     model,
-#     to_file='model_architecture.png',
-#     show_shapes=True,      # Shows inputs/output dimensions (Very useful!)
-#     show_layer_names=True, # Shows 'conv1d', 'lstm', etc.
-#     show_layer_activations=True # Shows 'relu', 'tanh', etc.
-# )
-# print("--- Final Evaluation On Test Set ---")
-# print("MLP Model Accuracy:", accuracy_score(y_test, y_pred))
-# print("MLP Model ROC AUC Score:", roc_auc_score(y_test, y_pred))
-
-# fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+# fpr, tpr, thresholds = roc_curve(y_test, y_pred)
 # roc_auc = auc(fpr, tpr)
 
-# plt.figure(figsize=(8, 6))
-# plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC Curve (AUC = {roc_auc:.2f})')
-# plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random Guessing')
+# print("--- Final Evaluation On Test Set ---")
+# print("Model Accuracy:", accuracy_score(y_test, y_pred))
+# print("Model ROC AUC Score:", roc_auc_score(y_test, y_pred))
+# print(f"Exact AUC Score: {roc_auc}")
 
-# plt.xlim([0.0, 1.0])
-# plt.ylim([0.0, 1.05])
-# plt.xlabel('False Positive Rate (False Alarms)')
-# plt.ylabel('True Positive Rate (Recall / Sensitivity)')
-# plt.title('Receiver Operating Characteristic (ROC) for Fake News Model')
-# plt.legend(loc="lower right")
-# plt.grid(alpha=0.3)
+# fig, ax = plt.subplots(figsize=(8, 6))
+# cmap = plt.get_cmap('Greens')
+# gradient = np.linspace(0, 1, 256)
+# gradient = np.vstack((gradient, gradient)).T
+# img = ax.imshow(gradient, extent=[0, 1, 0, 1], origin='lower', cmap=cmap, aspect='auto', alpha=0.8)
+
+# poly_points = list(zip(fpr, tpr)) + [(1, 0), (0, 0)]
+# poly = Polygon(poly_points, facecolor='none', edgecolor='none')
+# ax.add_patch(poly)
+
+# img.set_clip_path(poly)
+
+# ax.plot(fpr, tpr, color='#2ca02c', lw=3, label=f'ROC Curve (AUC = {roc_auc:.4f})')
+# ax.plot([0, 1], [0, 1], color='#2f4f4f', lw=2, linestyle='--', label='Random Guessing')
+
+# # 4. Final Touches
+# ax.set_xlim([0.0, 1.0])
+# ax.set_ylim([0.0, 1.05])
+# ax.set_xlabel('False Positive Rate (False Alarms)', fontsize=12)
+# ax.set_ylabel('True Positive Rate (Recall / Sensitivity)', fontsize=12)
+# ax.set_title('Receiver Operating Characteristic (ROC)', fontsize=14)
+# ax.legend(loc="lower right", fontsize=12)
+# ax.grid(alpha=0.3)
+
 # plt.show()
