@@ -235,7 +235,7 @@ if 'speech_input' not in st.session_state:
 
 # 2. Input Section
 with st.form("analysis_form"):
-    st.markdown('<h1 style="color:#333; margin-top:0;">Article Submission</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#333; margin-top:0;">Analyze Article</h1>', unsafe_allow_html=True)
     
     st.markdown('<h1 style="color:#333; font-size:25px;">Article Title</h1>', unsafe_allow_html=True)
     title = st.text_input("Article Title", placeholder="Paste the headline here...") 
@@ -539,6 +539,6 @@ if submitted:
                             </div>
                             """, unsafe_allow_html=True)
                         st.markdown("</div>", unsafe_allow_html=True)
-
+    
             except Exception as e:
                 st.error(f"Analysis Failed: {e}")
