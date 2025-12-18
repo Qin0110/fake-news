@@ -79,7 +79,7 @@ class Model_Building:
         tuner = kt.Hyperband(
             self.build_model,
             objective='val_accuracy',
-            max_epochs=30,
+            max_epochs=50,
             factor=3,
             directory='model_tuning',
             project_name='fake_news_cnn',
@@ -93,7 +93,7 @@ class Model_Building:
         tuner.search(
             self.X_train, 
             self.y_train, 
-            epochs=20, 
+            epochs=50, 
             validation_data=(self.X_validate, self.y_validate), 
             callbacks=[stop_early, reduce_lr]
         )

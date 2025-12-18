@@ -15,17 +15,18 @@ model.summary()
 y_pred_prob = model.predict(X_test)
 y_pred = (y_pred_prob > 0.5).astype(int)
 
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("f1_score:", f1_score(y_test, y_pred))
-print("recall_score:", recall_score(y_test, y_pred))
-print("precision_score:", precision_score(y_test, y_pred))
+print("\nAccuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+print("\nf1_score:", f1_score(y_test, y_pred))
+print("\nrecall_score:", recall_score(y_test, y_pred))
+print("\nprecision_score:", precision_score(y_test, y_pred))
 
 # print("First 10 predictions:", y_pred_prob[:10])
 
 
 
 # print("Accuracy:", accuracy_score(y_test, y_pred))
-# print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
 
 # cm = confusion_matrix(y_test, y_pred)
 # sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')

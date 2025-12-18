@@ -1,3 +1,6 @@
+#region REFERECES
+# References of architecture building: https://www.sciencedirect.com/science/article/pii/S2667096820300070?via%3Dihub
+
 import numpy as np
 import joblib
 import keras
@@ -63,5 +66,5 @@ plt.ylabel('Loss')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig('./model/training_validation_curves.png')
+plt.savefig('./model/basic_training_validation_curves.png')
 plt.show()
