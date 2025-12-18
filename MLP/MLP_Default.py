@@ -107,6 +107,7 @@ def evaluate_performance(model, X_test_vec, y_test, cm_save_path='MLP_Default/ml
     
     print("MLP Model Accuracy:", accuracy_score(y_test, y_pred))
     print("\nClassification Report:\n", classification_report(y_test, y_pred))
+    
 
     cm = confusion_matrix(y_test, y_pred)
     print("Confusion Matrix:\n", cm)
