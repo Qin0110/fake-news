@@ -110,7 +110,7 @@ def train_manual_mlp(X_train_vec, y_train, X_val_vec, y_validate, best_params):
                 
     return mlp, history
 
-def plot_learning_curves(history, save_path='mlp_training_curve.png'):
+def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_training_curve.png'):
     epochs_range = range(1, len(history['train_acc']) + 1)
     
     plt.figure(figsize=(14, 6))
@@ -153,8 +153,8 @@ def evaluate_and_save(model, vectorizer, X_test_vec, y_test):
     print(f"Final Test Accuracy: {acc:.4f}")
     print(f"Final Test Log Loss: {loss:.4f}")
     
-    joblib.dump(model, "mlp_fake_news_model.pkl")
-    joblib.dump(vectorizer, "tfidf_vectorizer.pkl")
+    joblib.dump(model, "MLP_Fine_Tuned/mlp_fake_news_model.pkl")
+    joblib.dump(vectorizer, "MLP_Fine_Tuned/tfidf_vectorizer.pkl")
     print("Model and vectorizer saved.")
 
 def main():
