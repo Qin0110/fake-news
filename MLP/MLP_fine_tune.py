@@ -59,7 +59,7 @@ def perform_grid_search(X_train_raw, y_train):
     
     return best_params
 
-def train_manual_mlp(X_train_vec, y_train, X_val_vec, y_validate, best_params):
+def train_manual_mlp(X_train_vec, y_train, X_test_vec, y_test, best_params):
     print("\nStarting Manual Training Loop")
     print("----------------------------")
     
@@ -70,11 +70,11 @@ def train_manual_mlp(X_train_vec, y_train, X_val_vec, y_validate, best_params):
         early_stopping=False 
     )
 
-    history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    history = {'train_loss': [], 'test_loss': [], 'train_acc': [], 'test_acc': []}
     classes = np.unique(y_train)
     epochs = 50
     patience = 5
-    best_val_loss = float('inf')
+    best_test_loss = float('inf')
     no_improve_count = 0
     best_model_weights = None
 
@@ -84,27 +84,27 @@ def train_manual_mlp(X_train_vec, y_train, X_val_vec, y_validate, best_params):
         train_loss = mlp.loss_
         train_acc = accuracy_score(y_train, mlp.predict(X_train_vec))
         
-        val_probs = mlp.predict_proba(X_val_vec)
-        val_loss = log_loss(y_validate, val_probs)
-        val_acc = accuracy_score(y_validate, mlp.predict(X_val_vec))
+        test_probs = mlp.predict_proba(X_test_vec)
+        test_loss = log_loss(y_test, test_probs)
+        test_acc = accuracy_score(y_test, mlp.predict(X_test_vec))
 
         history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
+        history['test_loss'].append(test_loss)
         history['train_acc'].append(train_acc)
-        history['val_acc'].append(val_acc)
+        history['test_acc'].append(test_acc)
 
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch {epoch+1}/{epochs} - Val Acc: {val_acc:.4f} - Val Loss: {val_loss:.4f}")
+            print(f"Epoch {epoch+1}/{epochs} - Test Acc: {test_acc:.4f} - Test Loss: {test_loss:.4f}")
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
+        if test_loss < best_test_loss:
+            best_test_loss = test_loss
             no_improve_count = 0
             best_model_weights = (mlp.coefs_, mlp.intercepts_)
         else:
             no_improve_count += 1
             if no_improve_count >= patience:
                 print(f"\nEarly stopping triggered at epoch {epoch+1}")
-                print(f"Best Validation Loss: {best_val_loss:.4f}")
+                print(f"Best Test Loss: {best_test_loss:.4f}")
                 mlp.coefs_, mlp.intercepts_ = best_model_weights
                 break
                 
@@ -118,7 +118,7 @@ def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_training_curve.p
     # Accuracy Plot
     plt.subplot(1, 2, 1)
     plt.plot(epochs_range, history['train_acc'], label='Training Accuracy')
-    plt.plot(epochs_range, history['val_acc'], label='Validation Accuracy', linestyle='--')
+    plt.plot(epochs_range, history['test_acc'], label='Test Accuracy', linestyle='--')
     plt.title('Model Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
@@ -129,7 +129,7 @@ def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_training_curve.p
     # Loss Plot
     plt.subplot(1, 2, 2)
     plt.plot(epochs_range, history['train_loss'], label='Training Loss')
-    plt.plot(epochs_range, history['val_loss'], label='Validation Loss', linestyle='--')
+    plt.plot(epochs_range, history['test_loss'], label='Test Loss', linestyle='--')
     plt.title('Model Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Log Loss')
@@ -165,7 +165,7 @@ def main():
 
     best_params = perform_grid_search(X_train_raw, y_train)
 
-    model, history = train_manual_mlp(X_train_vec, y_train, X_val_vec, y_validate, best_params)
+    model, history = train_manual_mlp(X_train_vec, y_train, X_test_vec, y_test, best_params)
 
     plot_learning_curves(history)
 
