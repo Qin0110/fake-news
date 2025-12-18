@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
 
 def load_and_vectorize_data(filepath):
-    print("--- Loading Data ---")
     try:
         data = joblib.load(filepath)
         X_train, X_validate, X_test, y_train, y_validate, y_test = data

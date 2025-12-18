@@ -128,7 +128,7 @@ def main():
     X_train, X_validate, X_test, y_train, y_validate, y_test = data
     X_train_vec, X_test_vec, tfidf = vectorize_data(X_train, X_test)
     mlp = MLPClassifier(random_state=42)
-    # perform_cross_validation(mlp, X_train_vec, y_train, cv=5)
+    perform_cross_validation(mlp, X_train_vec, y_train, cv=5)
     trained_model, history = train_model_with_early_stopping(
         mlp, X_train_vec, y_train, X_test_vec, y_test, epochs=50, patience=5
     )
