@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, log_loss
+from sklearn.metrics import accuracy_score, log_loss, confusion_matrix, ConfusionMatrixDisplay, classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
@@ -144,17 +144,30 @@ def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_training_curve.p
 def evaluate_and_save(model, vectorizer, X_test_vec, y_test):
     print("\nFinal Evaluation")
     print("----------------")
+    y_test_pred = model.predict(X_test_vec)
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    test_log_loss = log_loss(y_test, model.predict_proba(X_test_vec))
+
     y_pred = model.predict(X_test_vec)
-    y_probs = model.predict_proba(X_test_vec)
-    
-    acc = accuracy_score(y_test, y_pred)
-    loss = log_loss(y_test, y_probs)
-    
-    print(f"Final Test Accuracy: {acc:.4f}")
-    print(f"Final Test Log Loss: {loss:.4f}")
-    
-    joblib.dump(model, "MLP_Fine_Tuned/mlp_fake_news_model.pkl")
+
+    cm = confusion_matrix(y_test, y_pred)
+    print("Confusion Matrix:\n", cm)
+
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['0', '1'])
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title("Confusion Matrix - MLP Classifier")
+    plt.grid(False)
+    plt.savefig("MLP_Fine_Tuned/mlp_confusion_matrix.png")
+    plt.show()
+
+    print("\nFinal Evaluation on Test Set")
+    print("----------------------------")
+    y_pred = model.predict(X_test_vec)
+    print("MLP Model Accuracy:", accuracy_score(y_test, y_pred))
+    print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
     joblib.dump(vectorizer, "MLP_Fine_Tuned/tfidf_vectorizer.pkl")
+    joblib.dump(model, "MLP_Fine_Tuned/mlp_fake_news_model.pkl")
     print("Model and vectorizer saved.")
 
 def main():
