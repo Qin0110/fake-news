@@ -120,7 +120,7 @@ def evaluate_performance(model, X_test_vec, y_test, cm_save_path='MLP_Default/ml
     plt.show()
 
 def main():
-    data_path = "0.2_split_data.joblib"
+    data_path = "../0.2_split_data.joblib"
     data = load_data(data_path)
     if data is None: return
     
