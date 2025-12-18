@@ -55,7 +55,7 @@ class Preprocessing:
         
         self.text_data = self.df['clean_text_string'].values
         
-        #region X and y variables here, QUESTION: USE .value or df
+        #region X and y variables here
         self.X = self.text_data
         self.y = self.df['label'].values
 
