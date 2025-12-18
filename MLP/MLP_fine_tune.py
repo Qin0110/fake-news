@@ -109,7 +109,7 @@ def train_manual_mlp(X_train_vec, y_train, X_test_vec, y_test, best_params):
                 
     return mlp, history
 
-def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_training_curve.png'):
+def plot_learning_curves(history, save_path='MLP_Fine_Tuned/mlp_test_curve.png'):
     epochs_range = range(1, len(history['train_acc']) + 1)
     
     plt.figure(figsize=(14, 6))
