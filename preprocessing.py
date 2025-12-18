@@ -75,7 +75,7 @@ class Preprocessing:
         return ftfy.fix_text(text)
 
     def is_english(self, text):
- 
+
         try:
             return detect(str(text)) == 'en'
         except LangDetectException:
@@ -107,7 +107,6 @@ class Preprocessing:
             if word.isalpha() and word not in self.stop_words:
                 wn_tag = self.get_wordnet_pos(tag)
                 lemma = self.lemmatizer.lemmatize(word.lower(), pos=wn_tag)
-                # stem = self.stemmer.stem(lemma)
                 processed_tokens.append(lemma)
         
         return processed_tokens
