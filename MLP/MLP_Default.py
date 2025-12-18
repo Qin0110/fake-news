@@ -7,7 +7,6 @@ from sklearn.model_selection import cross_val_score
 import joblib
 
 def load_data(filepath):
-    print(f"Loading data from {filepath}...")
     try:
         return joblib.load(filepath)
     except FileNotFoundError:
@@ -15,21 +14,18 @@ def load_data(filepath):
         return None
 
 def vectorize_data(X_train, X_test):
-    print("Vectorizing data...")
     tfidf = TfidfVectorizer(max_features=5000)
     X_train_vec = tfidf.fit_transform(X_train)
     X_test_vec = tfidf.transform(X_test)
     return X_train_vec, X_test_vec, tfidf
 
 def perform_cross_validation(model, X_train_vec, y_train, cv=5):
-    print(f"\nPerforming {cv}-fold Cross-Validation...")
     cv_scores = cross_val_score(model, X_train_vec, y_train, cv=cv, scoring='accuracy')
     print("Cross-validation scores for each fold:", cv_scores)
     print(f"Average cross-validation accuracy: {cv_scores.mean():.4f}")
     return cv_scores
 
 def train_model_with_early_stopping(model, X_train_vec, y_train, X_test_vec, y_test, epochs=50, patience=5):
-    print("\nStarting training with early stopping...")
     
     train_loss, test_loss = [], []
     train_acc, test_acc = [], []
@@ -75,7 +71,7 @@ def train_model_with_early_stopping(model, X_train_vec, y_train, X_test_vec, y_t
     }
     return model, history
 
-def plot_learning_curves(history, save_path='mlp_test_curve.png'):
+def plot_learning_curves(history, save_path='MLP_Default/mlp_test_curve.png'):
     epochs_range = range(1, len(history['train_acc']) + 1)
 
     plt.figure(figsize=(14, 6))
@@ -104,7 +100,7 @@ def plot_learning_curves(history, save_path='mlp_test_curve.png'):
     print(f"\nGraph saved as {save_path}")
     plt.show()
 
-def evaluate_performance(model, X_test_vec, y_test, cm_save_path='mlp_confusion_matrix.png'):
+def evaluate_performance(model, X_test_vec, y_test, cm_save_path='MLP_Default/mlp_confusion_matrix.png'):
     print("\nFinal Evaluation on Test Set")
     print("----------------------------")
     y_pred = model.predict(X_test_vec)
