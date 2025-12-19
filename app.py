@@ -241,11 +241,8 @@ with st.form("analysis_form"):
     title = st.text_input("Article Title", placeholder="Paste the headline here...") 
     st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True) 
 
-    col_label, col_btn = st.columns([0.85, 0.15])
-    with col_label:
-        st.markdown('<h1 style="color:#333; font-size:25px;">Article Body Content</h1>', unsafe_allow_html=True)
-    with col_btn:
-        record_click = st.form_submit_button("🎤 Record")
+    st.markdown('<h1 style="color:#333; font-size:25px;">Article Body Content</h1>', unsafe_allow_html=True)
+    
 
     text = st.text_area(
         "Article Body Content", 
@@ -272,9 +269,11 @@ with st.form("analysis_form"):
                 ⚠️ Please enter at least {min_words} words. Current: {word_count}
             </div>
             """, unsafe_allow_html=True)
-
-    submitted = st.form_submit_button("ANALYZE ARTICLE INTEGRITY")
-
+    col_submit, col_record = st.columns([0.85, 0.15])
+    with col_submit:
+        submitted = st.form_submit_button("ANALYZE ARTICLE INTEGRITY")
+    with col_record:
+        record_click = st.form_submit_button("🎤 Record", type="secondary")
 
 # 3. Logic Handling
 if record_click:
