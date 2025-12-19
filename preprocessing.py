@@ -40,10 +40,7 @@ class Preprocessing:
         self.lemmatizer = WordNetLemmatizer()
         
         negation_list = {
-            'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing',
-            "don't", "aren't", "isn't", "wasn't", "weren't",
-            "won't", "wouldn't", "didn't", "doesn't",
-            "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mustn't"
+            'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing'
         }
         self.stop_words = set(stopwords.words('english')) - negation_list
         
@@ -140,10 +137,7 @@ class InferencePreprocessor:
         self.lemmatizer = WordNetLemmatizer()
 
         negation_list = {
-            'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing',
-            "don't", "aren't", "isn't", "wasn't", "weren't",
-            "won't", "wouldn't", "didn't", "doesn't",
-            "hasn't", "haven't", "hadn't", "shouldn't", "can't", "couldn't", "mustn't"
+            'no', 'not', 'nor', 'neither', 'never', 'none', 'nobody', 'nowhere', 'nothing'
         }
         self.stop_words = set(stopwords.words('english')) - negation_list
 
