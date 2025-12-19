@@ -16,9 +16,11 @@ from nltk.corpus import wordnet
 DetectorFactory.seed = 42
 
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
+nltk.download('average_perceptron_tagger_eng')
 nltk.download('omw-1.4')
 
 class Preprocessing:
