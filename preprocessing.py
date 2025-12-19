@@ -10,7 +10,7 @@ import ftfy
 from langdetect import detect, LangDetectException, DetectorFactory
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 
 DetectorFactory.seed = 42
@@ -39,7 +39,6 @@ class Preprocessing:
         print(f"Total rows after language filtering: {final_rows}")
         print(f"Removed {initial_rows - final_rows} non-English rows.")
 
-        self.stemmer = PorterStemmer()
         self.lemmatizer = WordNetLemmatizer()
         
         negation_list = {
@@ -106,7 +105,7 @@ class Preprocessing:
         processed_tokens = []
         
         for word, tag in pos_tags:
-            if word.isalpha() and word not in self.stop_words:
+            if word.isalpha() and word.isascii() and  word not in self.stop_words:
                 wn_tag = self.get_wordnet_pos(tag)
                 lemma = self.lemmatizer.lemmatize(word.lower(), pos=wn_tag)
                 processed_tokens.append(lemma)
@@ -140,7 +139,6 @@ class Preprocessing:
 
 class InferencePreprocessor:
     def __init__(self):
-        self.stemmer = PorterStemmer()
         self.lemmatizer = WordNetLemmatizer()
 
         negation_list = {
@@ -163,11 +161,18 @@ class InferencePreprocessor:
         else: 
             return wordnet.NOUN
 
+    def is_english(self, text):
+        try:
+            return detect(str(text)) == 'en'
+        except LangDetectException:
+            return False
+        
     def fix_encoding_errors(self, text):
         return ftfy.fix_text(text)
     
     def clean_text(self, text):
         text = str(text).strip()
+        
         if not text:
             return ""
 
@@ -181,15 +186,14 @@ class InferencePreprocessor:
         text = text.lower()
         text = re.sub(r'https?://\S+|www\.\S+', '', text)
         text = re.sub(r'<.*?>', '', text)
-
+        
         tokens = word_tokenize(text)
         pos_tags = nltk.pos_tag(tokens)
         processed_tokens = []
 
         for word, tag in pos_tags:
-            if word.isalpha() and word not in self.stop_words:
+            if word.isalpha() and word.isascii() and word not in self.stop_words:
                 wn_tag = self.get_wordnet_pos(tag)
                 lemma = self.lemmatizer.lemmatize(word.lower(), pos=wn_tag)
                 processed_tokens.append(lemma)
-
         return " ".join(processed_tokens)
