@@ -8,3 +8,8 @@ mlp.py = ~6 Hours
 
 To run the basic model:
 run file `basic_cnn+rnn.py` or `./MLP/MLP_Default.py`
+
+# Notice: While running MLP, cd to MLP directory first to avoid file configuration errors.
+
+# OS Used: Windows
+Note: using linux/unix based may cause encoding different problem.
