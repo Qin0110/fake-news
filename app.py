@@ -293,18 +293,27 @@ if submitted:
     elif word_count < min_words:
         pass
     else:
+        combined_text_check = f"{title} {text}"
+        if not preprocessor.is_english(combined_text_check):
+            st.error("⚠️ Unsupported Language Detected. This system currently supports English articles only.")
+            st.stop()
         # Use a single spinner for the whole process
         with st.spinner("Analyzing patterns..."):
             try:
                 combined_text = f"{title} {text}"
                 cleaned_text = preprocessor.clean_text(combined_text)
+
                 input_tensor = tf.convert_to_tensor([[cleaned_text]], dtype=tf.string)
                 prediction_prob = model.predict(input_tensor, verbose=0)[0][0]
                 
                 is_fake = prediction_prob >= 0.5
                 
                 # --- RESULTS VARIABLES ---
-                if is_fake:
+                if cleaned_text is None:
+                    st.error("The input text could not be processed. Please ensure it contains valid English content.")
+                    st.stop()
+
+                elif is_fake:
                     verdict_text = "POTENTIAL MISINFORMATION"
                     verdict_subtext = "Integrity Analysis detects significant anomalies."
                     verdict_bg = "linear-gradient(90deg, #D32F2F 0%, #FFCDD2 100%)"
@@ -383,7 +392,7 @@ if submitted:
                     with st.spinner("Highlighting important words..."):
                         explainer = LimeTextExplainer(class_names=["Real", "Fake"])
                         exp = explainer.explain_instance(
-                            combined_text,
+                            cleaned_text,
                             lime_predict_proba,
                             num_features=10,
                             num_samples=500
@@ -392,7 +401,7 @@ if submitted:
                         features = exp.as_list()
                         max_score = max(abs(score) for _, score in features)
 
-                        highlighted_text = combined_text
+                        highlighted_text = combined_text 
 
                         for word, score in features:
                             if len(word.strip()) < 2:
