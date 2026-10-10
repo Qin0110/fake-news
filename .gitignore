@@ -1,13 +1,32 @@
+# Virtual environments
 env
+venv/
+.venv/
+ENV/
+
+# Data (the raw corpus is not distributed with the repo)
 *.csv
-my_tuning_dir/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Keras Tuner / experiment output
+my_tuning_dir/
 model_tuning/
 model_tuning_2/
+model_tuning_125_5/
 Biderectional_0.2_split/
 Biderectional_0.3_split/
 experimental_model/
 my_dir/
 test/
-model_tuning_125_5/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

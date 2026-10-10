@@ -1,0 +1,18 @@
+[theme]
+base = "dark"
+primaryColor = "#1565C0"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#1a1d23"
+textColor = "#fafafa"
+
+[server]
+headless = true
+# The app only ever handles text pasted into the form.
+maxUploadSize = 5
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Show a short message instead of a full traceback if something slips through.
+showErrorDetails = true

@@ -1,0 +1,19 @@
+* text=auto
+
+# Batch files must keep CRLF or Windows mis-parses labels and goto.
+*.bat   text eol=crlf
+*.txt   text eol=crlf
+
+*.py    text eol=lf
+*.sh    text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+
+*.joblib binary
+*.keras  binary
+*.pkl    binary
+*.h5     binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary

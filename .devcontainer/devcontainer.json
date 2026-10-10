@@ -17,7 +17,10 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo apt install build-essential portaudio19-dev python3-all-dev && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+  // Each step is separated by ';' rather than '&&' so that a failure in an
+  // optional step (e.g. the native audio headers needed only for speech input)
+  // does not abort the rest of the setup.
+  "updateContentCommand": "sudo apt-get update; sudo apt-get install -y build-essential; if [ -f packages.txt ]; then sudo xargs apt-get install -y < packages.txt; fi; if [ -f requirements.txt ]; then pip3 install --user -r requirements.txt; fi; pip3 install --user streamlit; python3 -c 'from preprocessing import ensure_nltk_data; print(\"NLTK missing:\", ensure_nltk_data())' || true; python3 verify_setup.py || true; echo 'Setup finished - see the verification report above'",
   "postAttachCommand": {
     "server": "streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
   },

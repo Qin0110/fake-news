@@ -1,0 +1,24 @@
+# Runtime dependencies for the app. SETUP.bat installs from this file.
+# Use requirements.txt instead for training or notebooks.
+
+# TensorFlow is pinned to 2.17.1 on purpose. From 2.19 the Windows wheel splits
+# its native code into a separate ~944 MB _pywrap_tensorflow_common.dll, which
+# fails its init routine here (WinError 1114). Do NOT upgrade to fix a TF error.
+# 2.17 also caps numpy below 2.1, hence the numpy pin.
+tensorflow==2.17.1
+keras==3.15.1
+numpy==1.26.4
+
+streamlit==1.52.1
+lime==0.2.0.1
+
+nltk==3.9.2
+contractions==0.1.73
+ftfy==6.3.1
+langdetect==1.0.9
+
+pandas==2.3.3
+scikit-learn==1.8.0
+scipy==1.16.3
+matplotlib==3.10.7
+joblib==1.5.2

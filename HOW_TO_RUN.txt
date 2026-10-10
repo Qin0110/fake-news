@@ -1,0 +1,201 @@
+===============================================================
+  FAKE NEWS DETECTION SYSTEM - HOW TO RUN
+===============================================================
+
+  SHORT VERSION
+  -------------
+  First time on a computer : SETUP.bat , then RUN.bat
+  Every time after that    : RUN.bat only
+
+  You do NOT need to run SETUP.bat again each time you unzip.
+
+
+===============================================================
+  STEP 1 - UNZIP
+===============================================================
+
+  Right-click the zip file  ->  "Extract All..."  ->  Extract.
+
+  You now have a folder called "fake-news".
+  Open it. You should see SETUP.bat and RUN.bat inside.
+
+  IMPORTANT: Extract the zip first. Do NOT double-click the
+  .bat files while they are still inside the zip - Windows
+  opens them in a temporary folder and they will not work.
+
+
+===============================================================
+  STEP 2 - INSTALL (only the first time on a computer)
+===============================================================
+
+  Double-click:   SETUP.bat
+
+  A black window opens. It will:
+    1. Download its own private Python  (about 21 MB)
+    2. Install TensorFlow, Streamlit and the rest (about 700 MB)
+    3. Download the language data (NLTK)
+    4. Check that everything works
+
+  This takes about 5 to 10 minutes and NEEDS INTERNET.
+
+  Wait until you see:
+
+      ===============================================
+        SETUP COMPLETE
+        Now double-click RUN.bat to start the app.
+      ===============================================
+
+  Then press any key to close the window.
+
+  If Windows shows a blue "Windows protected your PC" box,
+  click "More info" -> "Run anyway". This happens because the
+  file is not digitally signed. It is safe.
+
+  Nothing is installed system-wide and no administrator
+  password is needed.
+
+
+===============================================================
+  STEP 3 - RUN THE APP
+===============================================================
+
+  Double-click:   RUN.bat
+
+  A black window opens and your web browser opens at:
+
+      http://localhost:8501
+
+  The first start takes about 20-30 seconds because the model
+  has to load. After that it is fast.
+
+  KEEP THE BLACK WINDOW OPEN while you use the app.
+  It is the server. If you close it, the app stops.
+
+  TO STOP THE APP:
+      Close the black window, or press Ctrl+C inside it.
+
+
+===============================================================
+  STEP 4 - USING THE APP
+===============================================================
+
+  1. Type or paste a news TITLE and BODY.
+     (The body needs at least 20 words.)
+
+     Or click "Load neutral sample" / "Load sensational sample"
+     to fill in an example article for testing.
+
+  2. Click "ANALYZE ARTICLE INTEGRITY".
+
+  3. You get:
+       - A verdict and a confidence score
+       - The article with important words highlighted
+            RED  = pushed the result toward FAKE
+            BLUE = pushed the result toward REAL
+         Hover over a word to see its exact score.
+       - Bar charts of the most influential words
+       - A "Download analysis report" button
+
+  4. Optional settings are in the sidebar.
+     Click the ">>" arrow at the top-left to open it.
+       - Decision threshold
+       - How many words to highlight
+       - Turn the explanation off (makes it faster)
+       - Turn off the English-only check
+
+  MICROPHONE: the "Record" button dictates into the body box.
+  If your computer has no microphone the button is greyed out.
+  Everything else still works.
+
+
+===============================================================
+  NEXT TIME (this is the important part)
+===============================================================
+
+  SAME COMPUTER
+      Just double-click RUN.bat. That is all.
+      This is still true if you deleted the folder and
+      unzipped it again, or moved it somewhere else.
+      The installation is kept in:
+          C:\Users\<you>\AppData\Local\FNDetect
+
+  A DIFFERENT COMPUTER
+      Run SETUP.bat once on that computer first,
+      then RUN.bat.
+
+  NO INTERNET
+      Fine, as long as SETUP.bat already finished once on
+      that computer. Only the setup needs internet.
+
+
+===============================================================
+  IF SOMETHING GOES WRONG
+===============================================================
+
+  Whatever the problem is, run SETUP.bat again first.
+  It is safe to re-run, it continues from where it stopped,
+  and it prints a full report of what is broken.
+
+  "'streamlit' is not recognized" or the window flashes shut
+      You have not run SETUP.bat yet. Run it.
+
+  "Download failed"
+      No internet, or the connection dropped.
+      Reconnect and run SETUP.bat again.
+
+  The browser says "can't reach this page"
+      The server is still starting. Wait 30 seconds and
+      refresh. Check the black window is still open.
+
+  Port 8501 already in use
+      The app is already running in another window.
+      Close that window first.
+
+  "DLL load failed while importing _pywrap_tensorflow_internal"
+      Do NOT upgrade TensorFlow to fix this - upgrading is
+      what causes it. TensorFlow 2.19 and newer do not load
+      on this machine. requirements-app.txt already pins the
+      working version (2.17.1). Run SETUP.bat again.
+
+  I want to remove everything
+      Delete the folder:
+          C:\Users\<you>\AppData\Local\FNDetect
+      That removes the private Python and all the packages.
+      Nothing else was touched on your computer.
+
+
+===============================================================
+  WHAT EACH FILE IS FOR
+===============================================================
+
+  SETUP.bat              Installs everything (run once)
+  RUN.bat                Starts the app (run every time)
+  HOW_TO_RUN.txt         This file
+  README.md              Full technical documentation
+
+  app.py                 The web app
+  preprocessing.py       Text cleaning
+  verify_setup.py        Health check (SETUP.bat runs it for you)
+  model/                 The trained model
+  requirements-app.txt   What SETUP.bat installs
+
+  cnn+rnn.py             Training script (not needed to run app)
+  basic_cnn+rnn.py       Training script (not needed to run app)
+  MLP/                   Training scripts (not needed to run app)
+  test.py                Evaluation script (not needed to run app)
+  *.joblib               Training data (not needed to run app)
+
+
+===============================================================
+  A NOTE ON THE RESULTS
+===============================================================
+
+  This tool gives automated assistance, not a verdict of fact.
+  It learned the writing style of one English news dataset, so
+  it judges HOW something is written, not whether it is true.
+  It can be confidently wrong on satire, translated text, or
+  topics it never saw in training.
+
+  Always check important claims against primary sources.
+
+===============================================================
