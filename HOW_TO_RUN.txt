@@ -151,11 +151,30 @@
       The app is already running in another window.
       Close that window first.
 
-  "DLL load failed while importing _pywrap_tensorflow_internal"
-      Do NOT upgrade TensorFlow to fix this - upgrading is
-      what causes it. TensorFlow 2.19 and newer do not load
-      on this machine. requirements-app.txt already pins the
-      working version (2.17.1). Run SETUP.bat again.
+  "DLL load failed ... An Application Control policy has
+  blocked this file"
+      Windows Smart App Control is blocking TensorFlow,
+      because its libraries are not digitally signed.
+      Turn it off:
+          Windows Security
+            > App & browser control
+            > Smart App Control settings
+            > Off
+      WARNING: once Smart App Control is turned off it
+      cannot be turned back on without reinstalling
+      Windows. Decide deliberately.
+
+      To confirm this is the cause, open Event Viewer:
+          Applications and Services Logs > Microsoft
+            > Windows > CodeIntegrity > Operational
+      and look for Event ID 3077.
+
+  "DLL load failed" with no other detail
+      Usually the same Smart App Control block, reported
+      generically. If Smart App Control is already off,
+      do NOT upgrade TensorFlow - upgrading is what causes
+      the other known failure. requirements-app.txt already
+      pins the working version (2.17.1). Run SETUP.bat again.
 
   I want to remove everything
       Delete the folder:

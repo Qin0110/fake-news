@@ -135,10 +135,17 @@ echo   SETUP FINISHED, BUT THE CHECK ABOVE REPORTED PROBLEMS
 echo.
 echo   Read the [FAIL] lines above - they say exactly what is wrong.
 echo.
-echo   If TensorFlow failed to load its native runtime, do NOT upgrade
-echo   TensorFlow - upgrading is what causes it. 2.19+ ships a separate
-echo   944 MB DLL that fails here. requirements-app.txt already pins
-echo   the working version (2.17.1).
+echo   If TensorFlow could not load its native runtime and the error
+echo   mentions an "Application Control policy", Windows Smart App
+echo   Control is blocking it - TensorFlow's libraries are unsigned.
+echo   Turn it off in:
+echo     Windows Security ^> App ^& browser control
+echo       ^> Smart App Control settings ^> Off
+echo   It cannot be turned back on without reinstalling Windows.
+echo.
+echo   Without that message, do NOT upgrade TensorFlow - upgrading
+echo   causes the other known failure. requirements-app.txt already
+echo   pins the working version (2.17.1).
 echo ===================================================================
 echo.
 pause
