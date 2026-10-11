@@ -6,8 +6,8 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 set "ENVROOT=%LOCALAPPDATA%\FNDetect"
-set "RT=%ENVROOT%\rt"
-set "PY=%RT%\python.exe"
+set "VENV=%ENVROOT%\venv"
+set "PY=%VENV%\Scripts\python.exe"
 set "NLTK_DATA=%ENVROOT%\nltk_data"
 
 REM Quieten TensorFlow startup chatter so real errors stand out.

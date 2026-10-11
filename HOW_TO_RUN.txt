@@ -32,9 +32,15 @@
 
   A black window opens. It will:
     1. Download its own private Python  (about 21 MB)
-    2. Install TensorFlow, Streamlit and the rest (about 700 MB)
-    3. Download the language data (NLTK)
-    4. Check that everything works
+    2. Create a virtual environment for this project
+    3. Install TensorFlow, Streamlit and the rest (about 700 MB)
+       into that environment
+    4. Download the language data (NLTK)
+    5. Check that everything works
+
+  Everything goes in one folder, and nothing is installed
+  system-wide. If you already have Python on this computer,
+  it is left completely alone.
 
   This takes about 5 to 10 minutes and NEEDS INTERNET.
 
@@ -155,7 +161,12 @@
   blocked this file"
       Windows Smart App Control is blocking TensorFlow,
       because its libraries are not digitally signed.
-      Turn it off:
+
+      FIRST: just run SETUP.bat again. This usually clears
+      it on its own, because Windows re-checks the newly
+      installed files.
+
+      Only if it keeps happening, turn it off:
           Windows Security
             > App & browser control
             > Smart App Control settings
@@ -179,8 +190,10 @@
   I want to remove everything
       Delete the folder:
           C:\Users\<you>\AppData\Local\FNDetect
-      That removes the private Python and all the packages.
-      Nothing else was touched on your computer.
+      That removes the private Python runtime, the virtual
+      environment and all the packages in one go.
+      Nothing else on your computer was touched - your own
+      Python, if you have one, is untouched.
 
 
 ===============================================================

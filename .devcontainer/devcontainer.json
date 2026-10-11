@@ -10,19 +10,21 @@
       ]
     },
     "vscode": {
-      "settings": {},
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python"
+      },
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance"
       ]
     }
   },
-  // Each step is separated by ';' rather than '&&' so that a failure in an
-  // optional step (e.g. the native audio headers needed only for speech input)
-  // does not abort the rest of the setup.
-  "updateContentCommand": "sudo apt-get update; sudo apt-get install -y build-essential; if [ -f packages.txt ]; then sudo xargs apt-get install -y < packages.txt; fi; if [ -f requirements.txt ]; then pip3 install --user -r requirements.txt; fi; pip3 install --user streamlit; python3 -c 'from preprocessing import ensure_nltk_data; print(\"NLTK missing:\", ensure_nltk_data())' || true; python3 verify_setup.py || true; echo 'Setup finished - see the verification report above'",
+  // Everything installs into .venv, matching what SETUP.bat does on Windows.
+  // Steps are separated by ';' rather than '&&' so a failure in an optional one
+  // (the audio headers, needed only for speech input) does not abort the rest.
+  "updateContentCommand": "sudo apt-get update; sudo apt-get install -y build-essential; if [ -f packages.txt ]; then sudo xargs apt-get install -y < packages.txt; fi; python3 -m venv .venv; .venv/bin/python -m pip install --upgrade pip setuptools wheel; if [ -f requirements-app.txt ]; then .venv/bin/python -m pip install -r requirements-app.txt; fi; .venv/bin/python -c 'from preprocessing import ensure_nltk_data; print(\"NLTK missing:\", ensure_nltk_data())' || true; .venv/bin/python verify_setup.py || true; echo 'Setup finished - see the verification report above'",
   "postAttachCommand": {
-    "server": "streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
+    "server": ".venv/bin/python -m streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
   },
   "portsAttributes": {
     "8501": {
