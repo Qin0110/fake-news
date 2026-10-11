@@ -49,9 +49,14 @@ classifiers over TF-IDF features in both default and grid-searched form.
 
 Two files, and you only ever need the first one once.
 
-1. **Double-click `SETUP.bat`.** It downloads a private Python 3.12 runtime,
-   installs every dependency, fetches the NLTK language data, and verifies the
-   install. Takes 5-10 minutes and needs an internet connection.
+1. **Double-click `SETUP.bat`.** It builds a virtual environment, installs every
+   dependency into it, fetches the NLTK language data, and verifies the install.
+   Takes 5-10 minutes and needs an internet connection.
+
+   Setup uses an installed Python 3.10-3.12 if it finds one, and otherwise
+   downloads a private runtime. Having [python.org](https://www.python.org/downloads/)
+   Python installed is worth it: those binaries are signed, and Windows Smart
+   App Control blocks the unsigned downloaded fallback on some machines.
 2. **Double-click `RUN.bat`.** The app starts and your browser opens at
    <http://localhost:8501>. Close the console window to stop it.
 
@@ -323,7 +328,7 @@ The class balance is roughly 53% real to 47% fake, so no resampling is applied.
 | Symptom | Cause and fix |
 | --- | --- |
 | Anything at all goes wrong on Windows | Run `SETUP.bat` again. It is safe to re-run, resumes where it stopped, and ends with a full diagnosis |
-| `DLL load failed ... An Application Control policy has blocked this file` | **Windows Smart App Control** is blocking TensorFlow, whose native libraries are unsigned. Re-running `SETUP.bat` usually clears it, because the freshly installed files get re-evaluated. If it persists, turn Smart App Control off: Windows Security &rarr; App & browser control &rarr; Smart App Control settings &rarr; **Off** — but note it cannot be switched back on afterwards without reinstalling Windows, so decide deliberately. Confirm it is the cause by looking for Event ID 3077 in Event Viewer under *Applications and Services Logs &rarr; Microsoft &rarr; Windows &rarr; CodeIntegrity &rarr; Operational* |
+| `DLL load failed ... An Application Control policy has blocked this file` | **Windows Smart App Control** is blocking an unsigned binary. Install Python 3.12 from [python.org](https://www.python.org/downloads/) — its binaries are signed by the Python Software Foundation, so Smart App Control trusts them — then delete `%LOCALAPPDATA%\FNDetect` and run `SETUP.bat` again. Setup prefers an installed Python and only falls back to an unsigned downloaded one, which is what triggers this. Turning Smart App Control off also works but cannot be undone without reinstalling Windows. Confirm the cause with Event ID 3077 in Event Viewer under *Applications and Services Logs &rarr; Microsoft &rarr; Windows &rarr; CodeIntegrity &rarr; Operational* |
 | `DLL load failed ...` with no further detail (WinError 1114) | Usually the same Smart App Control block reported generically. If Smart App Control is already off, it is the other known cause: TensorFlow 2.19+ ships a separate ~944 MB `_pywrap_tensorflow_common.dll` that fails to initialise on some machines. `requirements-app.txt` pins 2.17.1, which does not have that split. Do not upgrade TensorFlow to fix this - upgrading is what causes it |
 | `LookupError: averaged_perceptron_tagger_eng` | NLTK corpora missing. Run `python verify_setup.py`, which downloads them |
 | `pip install -r requirements.txt` fails to parse | The file must be UTF-8. Some editors re-save it as UTF-16, which pip cannot read |

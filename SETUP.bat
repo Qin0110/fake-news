@@ -1,19 +1,18 @@
 @echo off
-REM One-time setup: installs a private Python runtime and creates a virtual
-REM environment with all dependencies under %LOCALAPPDATA%\FNDetect.
-REM Delete that folder to undo. See HOW_TO_RUN.txt.
+REM One-time setup: creates a virtual environment with all dependencies under
+REM %LOCALAPPDATA%\FNDetect. Delete that folder to undo. See HOW_TO_RUN.txt.
 
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
 REM Must stay OUTSIDE the project on a short path: TensorFlow's wheel nests
 REM headers ~106 chars deep and hits Windows' 260-char limit otherwise.
 set "ENVROOT=%LOCALAPPDATA%\FNDetect"
 set "RT=%ENVROOT%\rt"
-set "BASEPY=%RT%\python.exe"
 set "VENV=%ENVROOT%\venv"
 set "PY=%VENV%\Scripts\python.exe"
 set "NLTK_DATA=%ENVROOT%\nltk_data"
+set "PROBE=%TEMP%\fnd_pyprobe.txt"
 
 set "PYURL=https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.12.14%%2B20260901-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
 
@@ -22,33 +21,37 @@ echo ===================================================================
 echo   Fake News Detection System - Setup
 echo ===================================================================
 echo   Project     : %CD%
-echo   Runtime     : %RT%
 echo   Environment : %VENV%
 echo.
+
+echo [1/6] Looking for a usable Python 3.10-3.12...
+
+REM An official python.org build is strongly preferred. Its binaries are signed
+REM by the Python Software Foundation, so Windows Smart App Control trusts them.
+REM The downloadable standalone runtime is unsigned, and Smart App Control
+REM blocks its extension modules (_multiprocessing and friends) on some PCs.
+set "BASEPY="
+call :FINDPY py -3.12
+if not defined BASEPY call :FINDPY py -3.11
+if not defined BASEPY call :FINDPY py -3.10
+if not defined BASEPY call :FINDPY python
+if not defined BASEPY call :FINDPY "%RT%\python.exe"
+
+if defined BASEPY (
+    echo       Using: !BASEPY!
+    goto HAVEPYTHON
+)
+
+echo       No suitable Python found - downloading a private one ^(~21 MB^).
+echo       [!] It is unsigned, so if Windows Smart App Control is on it may
+echo           block it. Installing Python 3.12 from python.org and re-running
+echo           SETUP.bat avoids that entirely.
 
 where curl.exe >nul 2>&1
 if errorlevel 1 goto NOTOOLS
 where tar.exe >nul 2>&1
 if errorlevel 1 goto NOTOOLS
-goto TOOLSOK
 
-:NOTOOLS
-echo [X] This script needs curl.exe and tar.exe, which ship with
-echo     Windows 10 build 1803 and newer. Your Windows looks older.
-echo     Please update Windows, or install Python 3.12 manually from
-echo     https://www.python.org/downloads/ and run:
-echo         python -m venv .venv
-echo         .venv\Scripts\pip install -r requirements-app.txt
-goto FAILED
-
-:TOOLSOK
-
-if exist "%BASEPY%" (
-    echo [1/6] Python runtime already present - skipping download.
-    goto HAVEPYTHON
-)
-
-echo [1/6] Downloading a private Python 3.12 runtime ^(~21 MB^)...
 if not exist "%ENVROOT%" mkdir "%ENVROOT%"
 curl.exe -L --fail --retry 3 --retry-delay 2 -o "%ENVROOT%\python.tar.gz" "%PYURL%"
 if errorlevel 1 (
@@ -70,23 +73,43 @@ if exist "%ENVROOT%\python\python.exe" (
 )
 del /q "%ENVROOT%\python.tar.gz" >nul 2>&1
 
-if not exist "%BASEPY%" (
-    echo [X] The runtime did not unpack as expected.
+call :FINDPY "%RT%\python.exe"
+if not defined BASEPY (
+    echo [X] The downloaded runtime did not unpack as expected.
     goto FAILED
 )
+echo       Using: !BASEPY!
 
 :HAVEPYTHON
-"%BASEPY%" --version
-if errorlevel 1 (
-    echo [X] The bundled Python will not start.
-    goto FAILED
+echo.
+
+REM Reuse an existing environment only if it was built on the Python we just
+REM chose. One left over from the unsigned runtime has to be rebuilt, and
+REM comparing the base prefix is reliable where probing for a Smart App Control
+REM block is not - those blocks come and go between runs.
+if exist "%PY%" (
+    set "VBASE="
+    set "NBASE="
+    "%PY%" -c "import sys;sys.stdout.write(sys.base_prefix)" > "%PROBE%" 2>nul
+    set /p VBASE=<"%PROBE%"
+    "%BASEPY%" -c "import sys;sys.stdout.write(sys.prefix)" > "%PROBE%" 2>nul
+    set /p NBASE=<"%PROBE%"
+    if /i "!VBASE!"=="!NBASE!" (
+        echo [2/6] Virtual environment already exists - reusing it.
+        goto HAVEVENV
+    )
+    echo [2/6] Existing environment was built on a different Python - rebuilding.
+    rmdir /s /q "%VENV%" 2>nul
+    if exist "%VENV%" (
+        echo [X] The old environment could not be removed. It is usually still
+        echo     in use - close RUN.bat and any window running the app, then
+        echo     run SETUP.bat again. If that does not help, delete this by
+        echo     hand and re-run:
+        echo       %VENV%
+        goto FAILED
+    )
 )
 
-echo.
-if exist "%PY%" (
-    echo [2/6] Virtual environment already exists - reusing it.
-    goto HAVEVENV
-)
 echo [2/6] Creating the virtual environment...
 "%BASEPY%" -m venv "%VENV%"
 if errorlevel 1 (
@@ -102,12 +125,20 @@ if not exist "%PY%" (
     goto FAILED
 )
 
-REM Confirm the venv really is isolated from the base runtime before we
-REM install into it, so a broken venv fails here instead of halfway through.
-"%PY%" -c "import sys; sys.exit(0 if sys.prefix != sys.base_prefix else 1)"
+REM Fail here, not halfway through a 700 MB install, if anything is wrong.
+REM Written without "!=" on purpose: delayed expansion eats the "!".
+"%PY%" -c "import sys; sys.exit(sys.prefix == sys.base_prefix)"
 if errorlevel 1 (
-    echo [X] That environment is not isolated from the base runtime.
+    echo [X] That environment is not isolated from its base Python.
     echo     Delete %ENVROOT% and run SETUP.bat again.
+    goto FAILED
+)
+"%PY%" -c "import _multiprocessing, ssl, ctypes" 2>nul
+if errorlevel 1 (
+    echo [X] The environment cannot load core Python modules.
+    echo     This is usually Windows Smart App Control blocking an unsigned
+    echo     Python. Install Python 3.12 from https://www.python.org/downloads/
+    echo     then delete %ENVROOT% and run SETUP.bat again.
     goto FAILED
 )
 echo       Isolated virtual environment ready:
@@ -165,6 +196,27 @@ echo.
 pause
 exit /b 0
 
+
+REM --- helper: accept a Python only if it is 3.10-3.12 and can run --------
+:FINDPY
+if defined BASEPY goto :eof
+set "CAND="
+%* -c "import sys;sys.stdout.write(sys.executable if (3,10)<=sys.version_info[:2]<(3,13) else '')" > "%PROBE%" 2>nul
+if errorlevel 1 goto :eof
+for %%S in ("%PROBE%") do if %%~zS EQU 0 goto :eof
+set /p CAND=<"%PROBE%"
+if not defined CAND goto :eof
+set "BASEPY=%CAND%"
+goto :eof
+
+
+:NOTOOLS
+echo [X] No Python was found, and this script needs curl.exe and tar.exe
+echo     to fetch one. Those ship with Windows 10 build 1803 and newer.
+echo     Please install Python 3.12 from https://www.python.org/downloads/
+echo     and run SETUP.bat again.
+goto FAILED
+
 :VERIFYFAILED
 echo.
 echo ===================================================================
@@ -172,18 +224,15 @@ echo   SETUP FINISHED, BUT THE CHECK ABOVE REPORTED PROBLEMS
 echo.
 echo   Read the [FAIL] lines above - they say exactly what is wrong.
 echo.
-echo   If TensorFlow could not load its native runtime and the error
-echo   mentions an "Application Control policy", Windows Smart App
-echo   Control is blocking it - TensorFlow's libraries are unsigned.
-echo   Run SETUP.bat once more first; that usually clears it. If it
-echo   keeps happening, turn Smart App Control off in:
-echo     Windows Security ^> App ^& browser control
-echo       ^> Smart App Control settings ^> Off
-echo   It cannot be turned back on without reinstalling Windows.
+echo   If the error mentions an "Application Control policy", Windows
+echo   Smart App Control is blocking an unsigned file. The usual fix is
+echo   to install Python 3.12 from https://www.python.org/downloads/
+echo   (its binaries are signed), then delete
+echo     %ENVROOT%
+echo   and run SETUP.bat again so the environment is rebuilt on it.
 echo.
-echo   Without that message, do NOT upgrade TensorFlow - upgrading
-echo   causes the other known failure. requirements-app.txt already
-echo   pins the working version (2.17.1).
+echo   Do NOT upgrade TensorFlow to fix a load error - upgrading causes
+echo   the other known failure. requirements-app.txt pins 2.17.1.
 echo ===================================================================
 echo.
 pause

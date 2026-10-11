@@ -159,14 +159,22 @@
 
   "DLL load failed ... An Application Control policy has
   blocked this file"
-      Windows Smart App Control is blocking TensorFlow,
-      because its libraries are not digitally signed.
+      Windows Smart App Control is blocking a file that is
+      not digitally signed.
 
-      FIRST: just run SETUP.bat again. This usually clears
-      it on its own, because Windows re-checks the newly
-      installed files.
+      THE FIX: install Python 3.12 from
+          https://www.python.org/downloads/
+      Those files are signed, so Windows trusts them.
+      Then delete this folder:
+          C:\Users\<you>\AppData\Local\FNDetect
+      and run SETUP.bat again. It will find your new Python
+      and build the environment on it.
 
-      Only if it keeps happening, turn it off:
+      (SETUP.bat only downloads its own Python when it
+      cannot find one installed, and that downloaded copy
+      is unsigned - which is what Windows blocks.)
+
+      The other option is to turn Smart App Control off:
           Windows Security
             > App & browser control
             > Smart App Control settings
